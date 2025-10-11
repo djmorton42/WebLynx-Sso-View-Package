@@ -47,7 +47,7 @@
       const UPDATE_INTERVAL = 1000; // milliseconds - less frequent for results
       
       function getLaneColor(lane) {
-        return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
+        return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
       }
       
       

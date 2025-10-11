@@ -38,11 +38,11 @@
     <script src="/views/shared/weblynx-helpers.js"></script>
     <script>
       // Configuration - now using externalized view properties
-      const UPDATE_INTERVAL = VIEW_CONFIG.UPDATE_INTERVAL;
+      const UPDATE_INTERVAL = VIEW_CONFIG.updateInterval;
       const SORT_BY = 'place'; // 'place' or 'lane'
       
       function getLaneColor(lane) {
-        return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
+        return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
       }
       
       

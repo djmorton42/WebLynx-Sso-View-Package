@@ -151,7 +151,7 @@
       }
       
       function getLaneColor(lane) {
-        return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
+        return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
       }
       
       function createRacerBlock(racer) {
