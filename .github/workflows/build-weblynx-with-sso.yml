@@ -3,7 +3,7 @@ name: Build WebLynx with SSO Views
 on:
   workflow_dispatch:
     inputs:
-      weblinx_version:
+      weblynx_version:
         description: "WebLynx version to use (leave empty for latest)"
         required: false
         default: ""
@@ -42,31 +42,54 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Get WebLynx version
-        id: get_weblinx_version
+        id: get_weblynx_version
         run: |
-          if [ -n "${{ github.event.inputs.weblinx_version }}" ]; then
-            weblinx_version="${{ github.event.inputs.weblinx_version }}"
+          if [ -n "${{ github.event.inputs.weblynx_version }}" ]; then
+            weblynx_version="${{ github.event.inputs.weblynx_version }}"
           else
-            weblinx_version=$(gh release list --repo djmorton42/WebLynx --limit 1 --json tagName --jq '.[0].tagName')
-            weblinx_version=${weblinx_version#v}
+            weblynx_version=$(gh release list --repo djmorton42/WebLynx --limit 1 --json tagName --jq '.[0].tagName')
+            weblynx_version=${weblynx_version#v}
           fi
-          echo "Using WebLynx version: $weblinx_version"
-          echo "weblinx_version=$weblinx_version" >> $GITHUB_OUTPUT
+          echo "Using WebLynx version: $weblynx_version"
+          echo "weblynx_version=$weblynx_version" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
 
       - name: Download WebLynx release
         run: |
-          weblinx_version=${{ steps.get_weblinx_version.outputs.weblinx_version }}
-          echo "Downloading WebLynx v$weblinx_version..."
+          weblynx_version=${{ steps.get_weblynx_version.outputs.weblynx_version }}
+          echo "Downloading WebLynx v$weblynx_version..."
           
-          # Download the latest WebLynx release
-          gh release download --repo djmorton42/WebLynx --pattern "*.zip" --dir ./weblinx-download
+          # First, list available assets to see what's available
+          echo "Available assets for v$weblynx_version:"
+          gh release view "v$weblynx_version" --repo djmorton42/WebLynx --json assets --jq '.assets[].name'
           
-          # Extract the zip file
-          cd weblinx-download
-          unzip -q *.zip
+          # Download only the Windows version for the specified version
+          gh release download "v$weblynx_version" --repo djmorton42/WebLynx --pattern "*win*.zip" --dir ./weblynx-download
+          
+          # List what was downloaded
+          echo "Downloaded files:"
+          ls -la ./weblynx-download/
+          
+          # Extract the Windows zip file
+          cd weblynx-download
+          for zip_file in *win*.zip; do
+            if [ -f "$zip_file" ]; then
+              echo "Extracting $zip_file"
+              unzip -q "$zip_file"
+              echo "Contents after extraction:"
+              ls -la
+            fi
+          done
           cd ..
+          
+          # Debug: Show the final weblynx-download structure
+          echo "Final weblynx-download structure:"
+          find ./weblynx-download -type f -name "*.exe" -o -name "*.dll" -o -name "*.json" -o -name "*.txt" | head -10
+          echo "All directories in weblynx-download:"
+          find ./weblynx-download -type d
+          echo "Contents of weblynx-download after extraction:"
+          ls -la ./weblynx-download/
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -87,12 +110,46 @@ jobs:
 
       - name: Integrate SSO Views into WebLynx
         run: |
-          # Find the WebLynx directory (should be the only directory in weblinx-download)
-          weblinx_dir=$(find ./weblinx-download -maxdepth 1 -type d ! -path ./weblinx-download | head -1)
-          echo "WebLynx directory: $weblinx_dir"
+          # Debug: Show what's in weblynx-download
+          echo "Contents of weblynx-download:"
+          ls -la ./weblynx-download/
+          
+          # Find the WebLynx directory - look for directories that contain WebLynx files
+          # Exclude the Views directory that might be created by SSO package
+          weblynx_dir=""
+          for dir in ./weblynx-download/*/; do
+            if [ -d "$dir" ] && [ "$(basename "$dir")" != "Views" ]; then
+              # Check if this directory contains WebLynx files
+              if find "$dir" -maxdepth 1 -name "*.exe" -o -name "WebLynx*" -o -name "*.dll" | head -1 | grep -q .; then
+                weblynx_dir="$dir"
+                break
+              fi
+            fi
+          done
+          
+          # If no directory found with WebLynx files, use the first non-Views directory
+          if [ -z "$weblynx_dir" ]; then
+            weblynx_dir=$(find ./weblynx-download -maxdepth 1 -type d ! -path ./weblynx-download ! -path "*/Views" | head -1)
+          fi
+          
+          # If still no directory found, use weblynx-download directly
+          if [ -z "$weblynx_dir" ]; then
+            echo "No subdirectory found, using weblynx-download directly"
+            weblynx_dir="./weblynx-download"
+          fi
+          
+          echo "Using WebLynx directory: $weblynx_dir"
+          echo "Contents of WebLynx directory:"
+          ls -la "$weblynx_dir"
+          
+          # Remove the example view that comes with WebLynx
+          if [ -d "$weblynx_dir/Views/example" ]; then
+            echo "Removing example view directory"
+            rm -rf "$weblynx_dir/Views/example"
+          fi
           
           # Create Views directory if it doesn't exist
-          mkdir -p "$weblinx_dir/Views"
+          mkdir -p "$weblynx_dir/Views"
           
           # Copy all SSO view packages to WebLynx Views directory
           # Dynamically copy all directories from sso-download (excluding files)
@@ -100,31 +157,38 @@ jobs:
             if [ -d "$dir" ]; then
               dirname=$(basename "$dir")
               echo "Copying view package: $dirname"
-              cp -r "$dir" "$weblinx_dir/Views/"
+              cp -r "$dir" "$weblynx_dir/Views/"
             fi
           done
           
           # Copy VERSION.txt and README.md
-          cp ./sso-download/VERSION.txt "$weblinx_dir/Views/" 2>/dev/null || echo "No VERSION.txt found"
-          cp ./sso-download/README.md "$weblinx_dir/Views/" 2>/dev/null || echo "No README.md found"
+          cp ./sso-download/VERSION.txt "$weblynx_dir/Views/" 2>/dev/null || echo "No VERSION.txt found"
+          cp ./sso-download/README.md "$weblynx_dir/Views/" 2>/dev/null || echo "No README.md found"
           
           echo "Successfully integrated SSO views into WebLynx"
+          echo "Final WebLynx directory contents:"
+          ls -la "$weblynx_dir"
 
       - name: Create integrated WebLynx package
         run: |
-          weblinx_version=${{ steps.get_weblinx_version.outputs.weblinx_version }}
+          weblynx_version=${{ steps.get_weblynx_version.outputs.weblynx_version }}
           sso_version=${{ steps.get_sso_version.outputs.sso_version }}
+          timestamp=$(date -u +"%Y%m%d-%H%M%S")
           
-          # Find the WebLynx directory
-          weblinx_dir=$(find ./weblinx-download -maxdepth 1 -type d ! -path ./weblinx-download | head -1)
+          # Use the same weblynx_dir that was determined in the integration step
+          weblynx_dir="./weblynx-download"
           
-          # Create final zip package
-          cd "$weblinx_dir"
-          zip -r "../WebLynx-v${weblinx_version}-with-SSO-Views-v${sso_version}.zip" .
+          # Create final zip package in the root directory with timestamp
+          cd "$weblynx_dir"
+          zip -r "../WebLynx-v${weblynx_version}-with-SSO-Views-v${sso_version}-${timestamp}.zip" . -x "*.zip"
           cd ..
           
-          echo "Created integrated package: WebLynx-v${weblinx_version}-with-SSO-Views-v${sso_version}.zip"
-          echo "package_name=WebLynx-v${weblinx_version}-with-SSO-Views-v${sso_version}.zip" >> $GITHUB_OUTPUT
+          # Verify the file was created
+          echo "Checking for created package:"
+          ls -la "WebLynx-v${weblynx_version}-with-SSO-Views-v${sso_version}-${timestamp}.zip"
+          
+          echo "Created integrated package: WebLynx-v${weblynx_version}-with-SSO-Views-v${sso_version}-${timestamp}.zip"
+          echo "package_name=WebLynx-v${weblynx_version}-with-SSO-Views-v${sso_version}-${timestamp}.zip" >> $GITHUB_OUTPUT
         id: create_package
 
       - name: Upload integrated package as artifact
@@ -137,7 +201,7 @@ jobs:
       - name: Summary
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **WebLynx Version**: ${{ steps.get_weblinx_version.outputs.weblinx_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **WebLynx Version**: ${{ steps.get_weblynx_version.outputs.weblynx_version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **SSO View Package Version**: ${{ steps.get_sso_version.outputs.sso_version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Integrated Package**: ${{ steps.create_package.outputs.package_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
