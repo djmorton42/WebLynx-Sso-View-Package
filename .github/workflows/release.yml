@@ -33,7 +33,11 @@ jobs:
       - name: Get latest tag
         id: get_tag
         run: |
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          # Get all tags starting with 'v' and exclude RC builds
+          latest_tag=$(git tag -l "v*" | grep -v "rc" | sort -V | tail -1)
+          if [ -z "$latest_tag" ]; then
+            latest_tag="v0.0.0"
+          fi
           echo "Latest tag: $latest_tag"
           echo "tag=$latest_tag" >> $GITHUB_OUTPUT
 
