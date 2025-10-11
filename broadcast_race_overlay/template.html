@@ -35,175 +35,16 @@
       </div>
     </template>
     
+    <script src="/views/shared/weblynx-helpers.js"></script>
     <script>
       // Configuration - now using externalized view properties
       const UPDATE_INTERVAL = VIEW_CONFIG.UPDATE_INTERVAL;
       const SORT_BY = 'place'; // 'place' or 'lane'
       
-      function formatTime(timeSpanString) {
-        if (!timeSpanString) return '00:00.000';
-        
-        // TimeSpan is serialized as "HH:mm:ss.fffffff" format
-        // We need to parse it and format as "mm:ss.fff"
-        const parts = timeSpanString.split(':');
-        if (parts.length !== 3) return '00:00.000';
-        
-        const hours = parseInt(parts[0]) || 0;
-        const minutes = parseInt(parts[1]) || 0;
-        const secondsParts = parts[2].split('.');
-        const seconds = parseInt(secondsParts[0]) || 0;
-        
-        // Handle the fractional seconds part (7 digits)
-        let milliseconds = 0;
-        if (secondsParts[1]) {
-          const fractionalPart = secondsParts[1].padEnd(7, '0');
-          milliseconds = Math.floor(parseInt(fractionalPart.substring(0, 3)) || 0);
-        }
-        
-        const totalMinutes = hours * 60 + minutes;
-        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
-        const formattedSeconds = seconds.toString().padStart(2, '0');
-        const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
-        
-        return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
-      }
-      
-      function formatRaceTime(timeSpanString) {
-        if (!timeSpanString) return '00:00.0';
-        
-        // TimeSpan is serialized as "HH:mm:ss.fffffff" format
-        // We need to parse it and format as "mm:ss.f"
-        const parts = timeSpanString.split(':');
-        if (parts.length !== 3) return '00:00.0';
-        
-        const hours = parseInt(parts[0]) || 0;
-        const minutes = parseInt(parts[1]) || 0;
-        const secondsParts = parts[2].split('.');
-        const seconds = parseInt(secondsParts[0]) || 0;
-        
-        // Handle the fractional seconds part (7 digits) - take first digit for tenths
-        let tenths = 0;
-        if (secondsParts[1]) {
-          const fractionalPart = secondsParts[1].padEnd(7, '0');
-          tenths = Math.floor(parseInt(fractionalPart.substring(0, 1)) || 0);
-        }
-        
-        const totalMinutes = hours * 60 + minutes;
-        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
-        const formattedSeconds = seconds.toString().padStart(2, '0');
-        
-        return `${formattedMinutes}:${formattedSeconds}.${tenths}`;
-      }
-      
       function getLaneColor(lane) {
         return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
       }
       
-      function formatLapsDisplay(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {
-        if (lapsRemaining === null || lapsRemaining === undefined) {
-          return '-';
-        }
-        
-        let displayValue = lapsRemaining;
-        
-        // Apply half-lap mode display logic
-        if (halfLapModeEnabled) {
-          if (raceStatus === 'NotStarted' || raceStatus === 0) {
-            // Before race starts, show the actual value (including half laps)
-            displayValue = lapsRemaining;
-          } else {
-            // After race starts, check if this is a half-lap race
-            if (lapsRemaining % 1 === 0.5) {
-              // Half-lap race: show the whole number part (visually remove the 1/2)
-              displayValue = Math.floor(lapsRemaining);
-            } else {
-              // Whole lap race: always subtract 1 after race starts
-              displayValue = lapsRemaining - 1;
-              
-              // If the value would be negative, show hyphen
-              if (displayValue < 0) {
-                return '-';
-              }
-            }
-          }
-        } else {
-          // Half-lap mode disabled: always subtract 1 from display value
-          displayValue = lapsRemaining - 1;
-          
-          // If the value would be negative, show hyphen
-          if (displayValue < 0) {
-            return '-';
-          }
-        }
-        
-        // If race has started (Running, Paused, or Finished), only show whole numbers
-        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
-          return Math.floor(displayValue).toString();
-        }
-        
-        // Before race starts, show decimal values including half laps
-        if (displayValue % 1 === 0.5) {
-          // Show as "13 1/2" format for half laps
-          const wholePart = Math.floor(displayValue);
-          return wholePart + ' 1/2';
-        }
-        
-        // Show as decimal for other cases
-        return displayValue.toString();
-      }
-      
-      function createLapsDisplayHTML(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {
-        if (lapsRemaining === null || lapsRemaining === undefined) {
-          return '-';
-        }
-        
-        // Apply half-lap mode display logic
-        let displayValue = lapsRemaining;
-        
-        if (halfLapModeEnabled) {
-          if (raceStatus === 'NotStarted' || raceStatus === 0) {
-            // Before race starts, show the actual value (including half laps)
-            displayValue = lapsRemaining;
-          } else {
-            // After race starts, check if this is a half-lap race
-            if (lapsRemaining % 1 === 0.5) {
-              // Half-lap race: show the whole number part (visually remove the 1/2)
-              displayValue = Math.floor(lapsRemaining);
-            } else {
-              // Whole lap race: always subtract 1 after race starts
-              displayValue = lapsRemaining - 1;
-              
-              // If the value would be negative, show hyphen
-              if (displayValue < 0) {
-                return '-';
-              }
-            }
-          }
-        } else {
-          // Half-lap mode disabled: always subtract 1 from display value
-          displayValue = lapsRemaining - 1;
-          
-          // If the value would be negative, show hyphen
-          if (displayValue < 0) {
-            return '-';
-          }
-        }
-        
-        // If race has started (Running, Paused, or Finished), only show whole numbers
-        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
-          return Math.floor(displayValue).toString();
-        }
-        
-        // Before race starts, show decimal values including half laps
-        if (displayValue % 1 === 0.5) {
-          // Show as "13" with small "1/2" for half laps
-          const wholePart = Math.floor(displayValue);
-          return `${wholePart}<span class="half-lap-fraction">1/2</span>`;
-        }
-        
-        // Show as decimal for other cases
-        return displayValue.toString();
-      }
       
       function createRacerBlock(racer, raceStatus, halfLapModeEnabled) {
         const template = document.getElementById('racer-template');
@@ -213,7 +54,7 @@
         clone.querySelector('.lane-color').style.backgroundColor = getLaneColor(racer.lane);
         clone.querySelector('.racer-name').textContent = racer.name || '-';
         clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
-        clone.querySelector('.time').textContent = formatTime(racer.cumulativeSplitTime);
+        clone.querySelector('.time').textContent = WebLynx.formatTime(racer.cumulativeSplitTime);
         
         const lapCountElement = clone.querySelector('.lap-count');
         const isHalfLap = racer.delayedLapsRemaining !== null && 
@@ -222,10 +63,10 @@
                          (raceStatus === 'NotStarted' || raceStatus === 0);
         
         if (isHalfLap) {
-          lapCountElement.innerHTML = createLapsDisplayHTML(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
+          lapCountElement.innerHTML = WebLynx.formatLapsDisplayHTML(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
           lapCountElement.classList.add('half-lap');
         } else {
-          lapCountElement.textContent = formatLapsDisplay(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
+          lapCountElement.textContent = WebLynx.formatLapsDisplay(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
         }
 
         return clone;
@@ -248,47 +89,41 @@
       }
       
       function updateRaceData() {
-        fetch(`/api/race/race-data?sortBy=${SORT_BY}`)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then(data => {
-            // Update race clock
-            document.getElementById('race-clock').textContent = formatRaceTime(data.currentTime);
-            
-            // Update event name with event number
-            const eventName = data.event?.eventName || 'Event Name';
-            const eventNumber = data.event?.eventNumber || '';
-            const displayName = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
-            document.getElementById('event-name').textContent = displayName;
-            
-            // Update racer stack
-            const racerStack = document.getElementById('racer-stack');
-            racerStack.innerHTML = '';
-            
-            // Only display racers that are actually in the race
-            const activeRacers = data.racers.filter(racer => racer.lane > 0);
-            const halfLapModeEnabled = data.halfLapModeEnabled || false;
-            
-            // Add racer blocks (2-10 racers supported)
-            activeRacers.forEach(racer => {
-              racerStack.appendChild(createRacerBlock(racer, data.status, halfLapModeEnabled));
-            });
-            
-            // Position event name above the racer stack
-            positionEventName();
-          })
-          .catch(error => {
+        WebLynx.updateRaceData((data, error) => {
+          if (error) {
             console.error('Error fetching race data:', error);
+            return;
+          }
+          
+          // Update race clock
+          document.getElementById('race-clock').textContent = WebLynx.formatRaceTime(data.currentTime);
+          
+          // Update event name with event number
+          const eventName = data.event?.eventName || 'Event Name';
+          const eventNumber = data.event?.eventNumber || '';
+          const displayName = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
+          document.getElementById('event-name').textContent = displayName;
+          
+          // Update racer stack
+          const racerStack = document.getElementById('racer-stack');
+          racerStack.innerHTML = '';
+          
+          // Only display racers that are actually in the race
+          const activeRacers = WebLynx.getActiveRacers(data.racers);
+          const halfLapModeEnabled = data.halfLapModeEnabled || false;
+          
+          // Add racer blocks (2-10 racers supported)
+          activeRacers.forEach(racer => {
+            racerStack.appendChild(createRacerBlock(racer, data.status, halfLapModeEnabled));
           });
+          
+          // Position event name above the racer stack
+          positionEventName();
+        }, SORT_BY);
       }
       
       // Start updating
-      updateRaceData(); // Initial load
-      setInterval(updateRaceData, UPDATE_INTERVAL);
+      WebLynx.startAutoUpdate(updateRaceData, UPDATE_INTERVAL, SORT_BY);
     </script>
   </body>
 </html>

@@ -36,44 +36,35 @@
       </div>
     </div>
     
+    <script src="/views/shared/weblynx-helpers.js"></script>
     <script>
       // Configuration
       const UPDATE_INTERVAL = 2000; // milliseconds
       
       function updateAnnouncementData() {
-        fetch('/api/race/race-data')
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then(data => {
-            // The meet title and event subtitle are set from configuration and don't change dynamically
-            // The meet title should always be "Ontario Elite Circuit Meet #1" from BroadcastSettings.MeetTitle
-            // The event subtitle should always be "September 27-28, 2025" from BroadcastSettings.EventSubtitle
-            
-            // Update announcement message
-            const announcementElement = document.getElementById('announcement-message');
-            
-            if (data.announcementMessage && data.announcementMessage.trim()) {
-              announcementElement.innerHTML = data.announcementMessage;
-              announcementElement.className = 'announcement-message';
-              announcementElement.style.display = 'block';
-            } else {
-              announcementElement.style.display = 'none';
-            }
-          })
-          .catch(error => {
+        WebLynx.updateRaceData((data, error) => {
+          if (error) {
             console.error('Error fetching race data:', error);
             const announcementElement = document.getElementById('announcement-message');
             announcementElement.style.display = 'none';
-          });
+            return;
+          }
+          
+          // Update announcement message
+          const announcementElement = document.getElementById('announcement-message');
+          
+          if (data.announcementMessage && data.announcementMessage.trim()) {
+            announcementElement.innerHTML = data.announcementMessage;
+            announcementElement.className = 'announcement-message';
+            announcementElement.style.display = 'block';
+          } else {
+            announcementElement.style.display = 'none';
+          }
+        });
       }
       
       // Start updating
-      updateAnnouncementData(); // Initial load
-      setInterval(updateAnnouncementData, UPDATE_INTERVAL);
+      WebLynx.startAutoUpdate(updateAnnouncementData, UPDATE_INTERVAL);
     </script>
   </body>
 </html>

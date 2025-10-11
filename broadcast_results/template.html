@@ -41,52 +41,15 @@
       </div>
     </template>
     
+    <script src="/views/shared/weblynx-helpers.js"></script>
     <script>
       // Configuration - now using externalized view properties
       const UPDATE_INTERVAL = 1000; // milliseconds - less frequent for results
-      
-      function formatTime(timeSpanString) {
-        if (!timeSpanString) return '--:--.---';
-        
-        // TimeSpan is serialized as "HH:mm:ss.fffffff" format
-        // We need to parse it and format as "mm:ss.fff"
-        const parts = timeSpanString.split(':');
-        if (parts.length !== 3) return '--:--.---';
-        
-        const hours = parseInt(parts[0]) || 0;
-        const minutes = parseInt(parts[1]) || 0;
-        const secondsParts = parts[2].split('.');
-        const seconds = parseInt(secondsParts[0]) || 0;
-        
-        // Handle the fractional seconds part (7 digits)
-        let milliseconds = 0;
-        if (secondsParts[1]) {
-          const fractionalPart = secondsParts[1].padEnd(7, '0');
-          milliseconds = Math.floor(parseInt(fractionalPart.substring(0, 3)) || 0);
-        }
-        
-        const totalMinutes = hours * 60 + minutes;
-        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
-        const formattedSeconds = seconds.toString().padStart(2, '0');
-        const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
-        
-        return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
-      }
       
       function getLaneColor(lane) {
         return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
       }
       
-      function isAlphaCode(placeText) {
-        // Check if the place text is an alpha code (DNF, DNS, DSQ, etc.)
-        // rather than a numeric position
-        if (!placeText || placeText.trim() === '') {
-          return false;
-        }
-        
-        // Try to parse as integer - if it fails, it's likely an alpha code
-        return isNaN(parseInt(placeText.trim()));
-      }
       
       function createResultRow(racer, hasPlaces) {
         const template = document.getElementById('result-template');
@@ -112,12 +75,12 @@
         // Show/hide time box based on whether any racers have places
         // and whether this specific racer has an alpha code (DNF, DNS, etc.)
         const timeElement = clone.querySelector('.final-time');
-        const hasAlphaCode = racer.hasPlaceData && isAlphaCode(racer.placeText);
+        const hasAlphaCode = racer.hasPlaceData && WebLynx.isAlphaCode(racer.placeText);
         
         if (hasPlaces && !hasAlphaCode) {
           // Show final time if available, otherwise show cumulative split time
           const timeToShow = racer.finalTime || racer.cumulativeSplitTime;
-          timeElement.textContent = formatTime(timeToShow);
+          timeElement.textContent = WebLynx.formatTime(timeToShow);
           timeElement.style.display = 'block';
         } else {
           timeElement.style.display = 'none';
@@ -127,65 +90,59 @@
       }
       
       function updateResultsData() {
-        fetch('/api/race/race-data?sortBy=place')
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then(data => {
-            // Update meet title and event name if available
-            if (data.event) {
-              // You might want to customize these based on your data structure
-              // For now, using the default values from the template
-            }
-            
-            // Update race details bar
-            if (data.event) {
-              const eventName = data.event.eventName || 'Race Event';
-              const eventNumber = data.event.eventNumber || '';
-              const raceDetails = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
-              document.getElementById('race-details-bar').textContent = raceDetails;
-            }
-            
-            // Update results container
-            const resultsContainer = document.getElementById('results-container');
-            resultsContainer.innerHTML = '';
-            
-            // Display all racers (already sorted by server)
-            const allRacers = data.racers.filter(racer => racer.lane > 0);
-            const sortedRacers = allRacers; // Server already sorts correctly
-            
-            // Apply dynamic sizing class based on number of racers
-            resultsContainer.className = 'results-container';
-            if (sortedRacers.length >= 2 && sortedRacers.length <= 10) {
-              resultsContainer.classList.add(`racers-${sortedRacers.length}`);
-            }
-            
-            // Check if any racers have places set
-            const hasPlaces = sortedRacers.some(racer => racer.hasPlaceData);
-            
-            // Show/hide unofficial results indicator based on whether places are set
-            const unofficialIndicator = document.querySelector('.unofficial-indicator');
-            if (unofficialIndicator) {
-              unofficialIndicator.style.display = hasPlaces ? 'block' : 'none';
-            }
-            
-            // Create result rows
-            sortedRacers.forEach(racer => {
-              const row = createResultRow(racer, hasPlaces);
-              resultsContainer.appendChild(row);
-            });
-          })
-          .catch(error => {
+        WebLynx.updateRaceData((data, error) => {
+          if (error) {
             console.error('Error fetching race data:', error);
+            return;
+          }
+          
+          // Update meet title and event name if available
+          if (data.event) {
+            // You might want to customize these based on your data structure
+            // For now, using the default values from the template
+          }
+          
+          // Update race details bar
+          if (data.event) {
+            const eventName = data.event.eventName || 'Race Event';
+            const eventNumber = data.event.eventNumber || '';
+            const raceDetails = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
+            document.getElementById('race-details-bar').textContent = raceDetails;
+          }
+          
+          // Update results container
+          const resultsContainer = document.getElementById('results-container');
+          resultsContainer.innerHTML = '';
+          
+          // Display all racers (already sorted by server)
+          const allRacers = WebLynx.getActiveRacers(data.racers);
+          const sortedRacers = allRacers; // Server already sorts correctly
+          
+          // Apply dynamic sizing class based on number of racers
+          resultsContainer.className = 'results-container';
+          if (sortedRacers.length >= 2 && sortedRacers.length <= 10) {
+            resultsContainer.classList.add(`racers-${sortedRacers.length}`);
+          }
+          
+          // Check if any racers have places set
+          const hasPlaces = sortedRacers.some(racer => racer.hasPlaceData);
+          
+          // Show/hide unofficial results indicator based on whether places are set
+          const unofficialIndicator = document.querySelector('.unofficial-indicator');
+          if (unofficialIndicator) {
+            unofficialIndicator.style.display = hasPlaces ? 'block' : 'none';
+          }
+          
+          // Create result rows
+          sortedRacers.forEach(racer => {
+            const row = createResultRow(racer, hasPlaces);
+            resultsContainer.appendChild(row);
           });
+        }, 'place');
       }
       
       // Start updating
-      updateResultsData(); // Initial load
-      setInterval(updateResultsData, UPDATE_INTERVAL);
+      WebLynx.startAutoUpdate(updateResultsData, UPDATE_INTERVAL, 'place');
     </script>
   </body>
 </html>

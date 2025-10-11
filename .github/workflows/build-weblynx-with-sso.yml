@@ -1,0 +1,136 @@
+name: Build WebLynx with SSO Views
+
+on:
+  workflow_dispatch:
+    inputs:
+      weblinx_version:
+        description: "WebLynx version to use (leave empty for latest)"
+        required: false
+        default: ""
+        type: string
+      sso_version:
+        description: "SSO View Package version to use (leave empty for latest)"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  build-weblynx-with-sso:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout SSO View Package
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get latest SSO View Package version
+        id: get_sso_version
+        run: |
+          if [ -n "${{ github.event.inputs.sso_version }}" ]; then
+            sso_version="${{ github.event.inputs.sso_version }}"
+          else
+            sso_version=$(gh release list --repo ${{ github.repository }} --limit 1 --json tagName --jq '.[0].tagName')
+            sso_version=${sso_version#v}
+          fi
+          echo "Using SSO View Package version: $sso_version"
+          echo "sso_version=$sso_version" >> $GITHUB_OUTPUT
+
+      - name: Get WebLynx version
+        id: get_weblinx_version
+        run: |
+          if [ -n "${{ github.event.inputs.weblinx_version }}" ]; then
+            weblinx_version="${{ github.event.inputs.weblinx_version }}"
+          else
+            weblinx_version=$(gh release list --repo djmorton42/WebLynx --limit 1 --json tagName --jq '.[0].tagName')
+            weblinx_version=${weblinx_version#v}
+          fi
+          echo "Using WebLynx version: $weblinx_version"
+          echo "weblinx_version=$weblinx_version" >> $GITHUB_OUTPUT
+
+      - name: Download WebLynx release
+        run: |
+          weblinx_version=${{ steps.get_weblinx_version.outputs.weblinx_version }}
+          echo "Downloading WebLynx v$weblinx_version..."
+          
+          # Download the latest WebLynx release
+          gh release download --repo djmorton42/WebLynx --pattern "*.zip" --dir ./weblinx-download
+          
+          # Extract the zip file
+          cd weblinx-download
+          unzip -q *.zip
+          cd ..
+
+      - name: Download SSO View Package
+        run: |
+          sso_version=${{ steps.get_sso_version.outputs.sso_version }}
+          echo "Downloading SSO View Package v$sso_version..."
+          
+          # Download the SSO View Package release
+          gh release download --repo ${{ github.repository }} --pattern "*.zip" --dir ./sso-download
+          
+          # Extract the SSO View Package
+          cd sso-download
+          unzip -q *.zip
+          cd ..
+
+      - name: Integrate SSO Views into WebLynx
+        run: |
+          # Find the WebLynx directory (should be the only directory in weblinx-download)
+          weblinx_dir=$(find ./weblinx-download -maxdepth 1 -type d ! -path ./weblinx-download | head -1)
+          echo "WebLynx directory: $weblinx_dir"
+          
+          # Create Views directory if it doesn't exist
+          mkdir -p "$weblinx_dir/Views"
+          
+          # Copy all SSO view packages to WebLynx Views directory
+          # Dynamically copy all directories from sso-download (excluding files)
+          for dir in ./sso-download/*/; do
+            if [ -d "$dir" ]; then
+              dirname=$(basename "$dir")
+              echo "Copying view package: $dirname"
+              cp -r "$dir" "$weblinx_dir/Views/"
+            fi
+          done
+          
+          # Copy VERSION.txt and README.md
+          cp ./sso-download/VERSION.txt "$weblinx_dir/Views/" 2>/dev/null || echo "No VERSION.txt found"
+          cp ./sso-download/README.md "$weblinx_dir/Views/" 2>/dev/null || echo "No README.md found"
+          
+          echo "Successfully integrated SSO views into WebLynx"
+
+      - name: Create integrated WebLynx package
+        run: |
+          weblinx_version=${{ steps.get_weblinx_version.outputs.weblinx_version }}
+          sso_version=${{ steps.get_sso_version.outputs.sso_version }}
+          
+          # Find the WebLynx directory
+          weblinx_dir=$(find ./weblinx-download -maxdepth 1 -type d ! -path ./weblinx-download | head -1)
+          
+          # Create final zip package
+          cd "$weblinx_dir"
+          zip -r "../WebLynx-v${weblinx_version}-with-SSO-Views-v${sso_version}.zip" .
+          cd ..
+          
+          echo "Created integrated package: WebLynx-v${weblinx_version}-with-SSO-Views-v${sso_version}.zip"
+          echo "package_name=WebLynx-v${weblinx_version}-with-SSO-Views-v${sso_version}.zip" >> $GITHUB_OUTPUT
+        id: create_package
+
+      - name: Upload integrated package as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebLynx-with-SSO-Views
+          path: ${{ steps.create_package.outputs.package_name }}
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **WebLynx Version**: ${{ steps.get_weblinx_version.outputs.weblinx_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **SSO View Package Version**: ${{ steps.get_sso_version.outputs.sso_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Integrated Package**: ${{ steps.create_package.outputs.package_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The integrated package has been uploaded as an artifact and is ready for download." >> $GITHUB_STEP_SUMMARY
