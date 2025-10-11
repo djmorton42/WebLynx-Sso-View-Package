@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="icon" type="image/png" href="/views/lap_counter/sso-logo.png">
+    <link rel="stylesheet" href="/views/lap_counter/styles.css">
+    {{VIEW_PROPERTIES}}
+  </head>
+  <body>
+    <div class="lap-counter-grid" id="lap-counter-grid">
+      <!-- Lap counters will be populated by JavaScript -->
+    </div>
+    
+    <!-- HTML5 Template for lap counter cards -->
+    <template id="lap-counter-template">
+      <div class="lap-counter-card">
+        <div class="laps-remaining"></div>
+      </div>
+    </template>
+    
+    <script>
+      // Configuration - now using externalized view properties
+      const UPDATE_INTERVAL = VIEW_CONFIG.UPDATE_INTERVAL;
+      
+      function formatLapsDisplay(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {
+        if (lapsRemaining === null || lapsRemaining === undefined) {
+          return '-';
+        }
+        
+        let displayValue = lapsRemaining;
+        
+        // Apply half-lap mode display logic
+        if (halfLapModeEnabled) {
+          if (raceStatus === 0) {
+            // Before race starts, show the actual value (including half laps)
+            displayValue = lapsRemaining;
+          } else {
+            // After race starts, check if this is a half-lap race
+            if (lapsRemaining % 1 === 0.5) {
+              // Half-lap race: show the whole number part (visually remove the 1/2)
+              displayValue = Math.floor(lapsRemaining);
+            } else {
+              // Whole lap race: always subtract 1 after race starts
+              displayValue = lapsRemaining - 1;
+              
+              // If the value would be negative, show hyphen
+              if (displayValue < 0) {
+                return '-';
+              }
+            }
+          }
+        } else {
+          // Half-lap mode disabled: always subtract 1 from display value
+          displayValue = lapsRemaining - 1;
+          
+          // If the value would be negative, show hyphen
+          if (displayValue < 0) {
+            return '-';
+          }
+        }
+        
+        // If race has started (Running=1, Paused=2, or Finished=3), only show whole numbers
+        if (raceStatus === 1 || raceStatus === 2 || raceStatus === 3) {
+          return Math.floor(displayValue).toString();
+        }
+        
+        // Before race starts, show decimal values including half laps
+        if (displayValue % 1 === 0.5) {
+          // Show as "13 1/2" format for half laps
+          const wholePart = Math.floor(displayValue);
+          return wholePart + ' 1/2';
+        }
+        
+        // Show as decimal for other cases
+        return displayValue.toString();
+      }
+      
+      function createLapsDisplayHTML(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {
+        if (lapsRemaining === null || lapsRemaining === undefined) {
+          return '-';
+        }
+        
+        let displayValue = lapsRemaining;
+        
+        // Apply half-lap mode display logic
+        if (halfLapModeEnabled) {
+          if (raceStatus === 0) {
+            // Before race starts, show the actual value (including half laps)
+            displayValue = lapsRemaining;
+          } else {
+            // After race starts, check if this is a half-lap race
+            if (lapsRemaining % 1 === 0.5) {
+              // Half-lap race: show the whole number part (visually remove the 1/2)
+              displayValue = Math.floor(lapsRemaining);
+            } else {
+              // Whole lap race: always subtract 1 after race starts
+              displayValue = lapsRemaining - 1;
+              
+              // If the value would be negative, show hyphen
+              if (displayValue < 0) {
+                return '-';
+              }
+            }
+          }
+        } else {
+          // Half-lap mode disabled: always subtract 1 from display value
+          displayValue = lapsRemaining - 1;
+          
+          // If the value would be negative, show hyphen
+          if (displayValue < 0) {
+            return '-';
+          }
+        }
+        
+        // If race has started (Running=1, Paused=2, or Finished=3), only show whole numbers
+        if (raceStatus === 1 || raceStatus === 2 || raceStatus === 3) {
+          return Math.floor(displayValue).toString();
+        }
+        
+        // Before race starts, show decimal values including half laps
+        if (displayValue % 1 === 0.5) {
+          // Show as "13" with small "1/2" for half laps
+          const wholePart = Math.floor(displayValue);
+          return `${wholePart}<span class="half-lap-fraction">1/2</span>`;
+        }
+        
+        // Show as decimal for other cases
+        return displayValue.toString();
+      }
+      
+      function createLapCounterCard(racer, raceStatus, halfLapModeEnabled) {
+        const template = document.getElementById('lap-counter-template');
+        const clone = template.content.cloneNode(true);
+        
+        // Use delayedLapsRemaining (server handles the 5-second delay)
+        const lapsElement = clone.querySelector('.laps-remaining');
+        const formattedLaps = formatLapsDisplay(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
+        
+        // Check if we need to add half-lap styling for the special display
+        // Only show half-lap formatting if race is NOT running AND it's actually a half-lap
+        const isHalfLap = (raceStatus === 0) && // Only before race starts
+                         racer.delayedLapsRemaining !== null && 
+                         racer.delayedLapsRemaining !== undefined && 
+                         racer.delayedLapsRemaining % 1 === 0.5;
+        
+        if (isHalfLap) {
+          // For half laps BEFORE race starts, use createLapsDisplayHTML for special formatting
+          const htmlLaps = createLapsDisplayHTML(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
+          lapsElement.innerHTML = htmlLaps;
+          lapsElement.classList.add('half-lap');
+        } else {
+          // Regular display - formatLapsDisplay handles showing whole numbers when running
+          lapsElement.textContent = formattedLaps;
+        }
+        
+        lapsElement.style.color = getLaneColor(racer.lane);
+        lapsElement.style.textShadow = `3px 3px 0px ${getStrokeColor(racer.lane)}, -3px -3px 0px ${getStrokeColor(racer.lane)}, 3px -3px 0px ${getStrokeColor(racer.lane)}, -3px 3px 0px ${getStrokeColor(racer.lane)}`;
+        
+        return clone;
+      }
+      
+      function createLapCounterRow(racers, raceStatus, halfLapModeEnabled) {
+        const row = document.createElement('div');
+        row.className = 'lap-counter-row';
+        
+        // Add lap counter cards for each racer
+        for (let i = 0; i < racers.length; i++) {
+          row.appendChild(createLapCounterCard(racers[i], raceStatus, halfLapModeEnabled));
+        }
+        
+        return row;
+      }
+      
+      function updateLapCounterData() {
+        fetch(`/api/race/race-data?sortBy=lane`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Update lap counter grid
+            const lapCounterGrid = document.getElementById('lap-counter-grid');
+            lapCounterGrid.innerHTML = '';
+            
+            // Only display racers that are actually in the race
+            const activeRacers = data.racers.filter(racer => racer.lane > 0);
+            
+            // Set data attribute for dynamic sizing
+            lapCounterGrid.setAttribute('data-racers', activeRacers.length);
+            
+            // Group racers into rows based on count for optimal screen usage
+            const halfLapModeEnabled = data.halfLapModeEnabled || false;
+            
+            if (activeRacers.length <= 2) {
+              // Single row for 1-2 racers
+              lapCounterGrid.appendChild(createLapCounterRow(activeRacers, data.status, halfLapModeEnabled));
+            } else if (activeRacers.length <= 4) {
+              // Single row for 3-4 racers
+              lapCounterGrid.appendChild(createLapCounterRow(activeRacers, data.status, halfLapModeEnabled));
+            } else if (activeRacers.length <= 6) {
+              // Two rows for 5-6 racers
+              const firstRow = activeRacers.slice(0, 3);
+              const secondRow = activeRacers.slice(3);
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow, data.status, halfLapModeEnabled));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow, data.status, halfLapModeEnabled));
+            } else if (activeRacers.length <= 8) {
+              // Two rows for 7-8 racers
+              const firstRow = activeRacers.slice(0, 4);
+              const secondRow = activeRacers.slice(4);
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow, data.status, halfLapModeEnabled));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow, data.status, halfLapModeEnabled));
+            } else {
+              // 5x2 grid for 9-10 racers
+              const firstRow = activeRacers.slice(0, 5);
+              const secondRow = activeRacers.slice(5);
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow, data.status, halfLapModeEnabled));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow, data.status, halfLapModeEnabled));
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching lap counter data:', error);
+          });
+      }
+      
+      // Start updating
+      updateLapCounterData(); // Initial load
+      setInterval(updateLapCounterData, UPDATE_INTERVAL);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,308 @@
+body {
+  background-color: transparent;
+  color: white;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  position: relative;
+}
+
+.broadcast-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Broadcast-safe overlay with better contrast */
+  background: linear-gradient(180deg, 
+    rgba(0, 0, 0, 0.4) 0%, 
+    rgba(0, 0, 0, 0.35) 15%, 
+    rgba(0, 0, 0, 0.45) 35%, 
+    rgba(0, 0, 0, 0.5) 100%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Safe area margins for 1080p broadcast */
+  padding: 60px 80px 80px 80px;
+  box-sizing: border-box;
+  min-height: 100vh; /* Ensure full viewport height */
+}
+
+/* Header Section - Optimized for 1080p broadcast */
+.header-section {
+  text-align: center;
+  margin-bottom: 8px; /* Further reduced from 15px */
+  position: relative;
+  width: 100%;
+  max-width: 1600px; /* Increased from 1400px for wider content */
+}
+
+.meet-title {
+  font-size: 3.2em;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+  margin-bottom: 4px; /* Further reduced from 8px */
+  letter-spacing: 2px;
+  line-height: 1.1;
+}
+
+.event-name {
+  font-size: 2.8em;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+  margin-bottom: 8px; /* Further reduced from 15px */
+  letter-spacing: 1.5px;
+  line-height: 1.1;
+}
+
+.unofficial-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 1.6em;
+  color: #ffff00;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 2px solid #ffff00;
+}
+
+.sso-logo {
+  position: absolute;
+  top: 20px; /* Move down from top edge */
+  left: 20px; /* Move right from left edge */
+  z-index: 10;
+}
+
+.sso-logo img {
+  height: 120px; /* Reduced back to original size to prevent overlap */
+  width: auto; /* Maintain aspect ratio */
+  max-width: 200px; /* Reduced back to original max width */
+  object-fit: contain;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3)); /* Match crisp styling */
+}
+
+/* Race Details Bar - Broadcast optimized */
+.race-details-bar {
+  background-color: #00cc00;
+  color: #000000;
+  padding: 16px 32px;
+  border-radius: 10px;
+  font-size: 1.8em;
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 25px; /* Increased from 15px to add gap before racer cards */
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  min-width: 400px;
+  max-width: 1600px; /* Match header width */
+  width: 100%;
+  border: 3px solid #ffffff;
+  letter-spacing: 1px;
+}
+
+/* Results Container - Optimized for broadcast readability and dynamic sizing */
+.results-container {
+  width: 100%;
+  max-width: 1600px; /* Increased from 1400px to match header width */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1; /* Take up remaining vertical space */
+  justify-content: center; /* Center content vertically when there's extra space */
+  min-height: 0; /* Allow container to shrink */
+}
+
+.result-row {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 18px 24px;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  flex: 1; /* Allow rows to grow and shrink equally */
+  min-height: 60px; /* Minimum height for readability */
+  max-height: 120px; /* Maximum height to prevent rows from being too tall */
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.position {
+  font-size: 1.6em; /* Reduced from 3.2em to fit "Lane x" text */
+  font-weight: 900;
+  color: #ffff00;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+  min-width: 100px; /* Increased to accommodate "Lane x" text */
+  text-align: center;
+  margin-right: 30px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 8px;
+  border: 2px solid #ffff00;
+  line-height: 1.1;
+}
+
+.racer-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-right: 30px;
+}
+
+.racer-name {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.affiliation {
+  font-size: 1.4em;
+  color: #cccccc;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.lane-color {
+  width: 64px; /* Doubled from 32px */
+  height: 48px; /* Increased by 50% from 32px */
+  border-radius: 8px; /* Slightly increased for better proportions */
+  margin-right: 30px;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.final-time {
+  font-size: 2.0em;
+  font-weight: 900;
+  color: #00ff00;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+  text-align: right;
+  min-width: 160px;
+  letter-spacing: 2px;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #00ff00;
+}
+
+/* Dynamic sizing classes for different numbers of racers */
+.results-container.racers-2 .result-row {
+  min-height: 60px;
+  max-height: 100px;
+}
+
+.results-container.racers-3 .result-row {
+  min-height: 60px;
+  max-height: 120px;
+}
+
+.results-container.racers-4 .result-row {
+  min-height: 60px;
+  max-height: 130px;
+}
+
+.results-container.racers-5 .result-row {
+  min-height: 60px;
+  max-height: 120px;
+}
+
+.results-container.racers-6 .result-row {
+  min-height: 55px;
+  max-height: 110px;
+}
+
+.results-container.racers-7 .result-row {
+  min-height: 50px;
+  max-height: 100px;
+}
+
+.results-container.racers-8 .result-row {
+  min-height: 45px;
+  max-height: 90px;
+}
+
+.results-container.racers-9 .result-row {
+  min-height: 35px;
+  max-height: 65px;
+}
+
+.results-container.racers-10 .result-row {
+  min-height: 30px;
+  max-height: 55px;
+}
+
+/* Reduce gap between rows for 9-10 racers to fit better */
+.results-container.racers-9 {
+  gap: 8px;
+}
+
+.results-container.racers-10 {
+  gap: 6px;
+}
+
+/* Reduce font sizes for 9-10 racers to fit better */
+.results-container.racers-9 .racer-name {
+  font-size: 1.8em;
+}
+
+.results-container.racers-9 .affiliation {
+  font-size: 1.2em;
+}
+
+.results-container.racers-9 .final-time {
+  font-size: 1.6em;
+}
+
+.results-container.racers-10 .racer-name {
+  font-size: 1.6em;
+}
+
+.results-container.racers-10 .affiliation {
+  font-size: 1.1em;
+}
+
+.results-container.racers-10 .final-time {
+  font-size: 1.4em;
+}
+
+/* Broadcast-specific optimizations for 1080p overlay */
+
+/* Ensure text remains readable on various TV displays */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .result-row {
+    border: 3px solid #ffffff;
+  }
+  
+  .position, .final-time {
+    border: 3px solid #ffff00;
+  }
+}
+
+/* Ensure proper scaling for broadcast equipment */
+.broadcast-overlay {
+  transform-origin: top left;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}

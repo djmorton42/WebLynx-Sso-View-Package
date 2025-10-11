@@ -1,0 +1,177 @@
+body {
+  background-color: #000;
+  color: white;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  /* Optimized for 1080p TV displays */
+  width: 1920px;
+  height: 1080px;
+}
+
+.lap-counter-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  justify-content: center;
+  align-items: center;
+}
+
+.lap-counter-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+.lap-counter-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 20px;
+  min-width: 300px;
+  min-height: 300px;
+  flex: 1;
+  max-width: 500px;
+}
+
+.laps-remaining {
+  font-size: 30em;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1;
+  position: relative;
+}
+
+/* Special styling for half lap display */
+.laps-remaining.half-lap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transform: translateY(-5%);
+}
+
+.laps-remaining .half-lap-fraction {
+  font-size: 0.15em;
+  vertical-align: baseline;
+  margin-top: -0.8em;
+  line-height: 1;
+  display: block;
+}
+
+/* Responsive adjustments for different screen sizes */
+@media (max-width: 1200px) {
+  .lap-counter-card {
+    min-width: 150px;
+    min-height: 150px;
+    padding: 15px;
+  }
+  
+  .lane-number {
+    font-size: 2.5em;
+  }
+  
+  .skater-name {
+    font-size: 1em;
+  }
+  
+  .laps-remaining {
+    font-size: 3em;
+  }
+}
+
+@media (max-width: 768px) {
+  .lap-counter-grid {
+    padding: 10px;
+    gap: 15px;
+  }
+  
+  .lap-counter-row {
+    gap: 15px;
+  }
+  
+  .lap-counter-card {
+    min-width: 120px;
+    min-height: 120px;
+    padding: 10px;
+  }
+  
+  .lane-number {
+    font-size: 2em;
+  }
+  
+  .skater-name {
+    font-size: 0.9em;
+  }
+  
+  .laps-remaining {
+    font-size: 2.5em;
+  }
+}
+
+/* Special styling for different lane counts - optimized for 1080p TV */
+.lap-counter-grid[data-racers="1"] .lap-counter-card,
+.lap-counter-grid[data-racers="2"] .lap-counter-card {
+  max-width: 950px;
+  min-height: 650px;
+}
+
+.lap-counter-grid[data-racers="1"] .laps-remaining,
+.lap-counter-grid[data-racers="2"] .laps-remaining {
+  font-size: 42em;
+}
+
+.lap-counter-grid[data-racers="3"] .lap-counter-card,
+.lap-counter-grid[data-racers="4"] .lap-counter-card {
+  max-width: 750px;
+  min-height: 550px;
+}
+
+.lap-counter-grid[data-racers="3"] .laps-remaining,
+.lap-counter-grid[data-racers="4"] .laps-remaining {
+  font-size: 32em;
+}
+
+.lap-counter-grid[data-racers="5"] .lap-counter-card,
+.lap-counter-grid[data-racers="6"] .lap-counter-card {
+  max-width: 650px;
+  min-height: 500px;
+}
+
+.lap-counter-grid[data-racers="5"] .laps-remaining,
+.lap-counter-grid[data-racers="6"] .laps-remaining {
+  font-size: 32em;
+}
+
+.lap-counter-grid[data-racers="7"] .lap-counter-card,
+.lap-counter-grid[data-racers="8"] .lap-counter-card {
+  max-width: 600px;
+  min-height: 500px;
+}
+
+.lap-counter-grid[data-racers="7"] .laps-remaining,
+.lap-counter-grid[data-racers="8"] .laps-remaining {
+  font-size: 24em;
+}
+
+.lap-counter-grid[data-racers="9"] .lap-counter-card,
+.lap-counter-grid[data-racers="10"] .lap-counter-card {
+  max-width: 350px;
+  min-height: 300px;
+}
+
+.lap-counter-grid[data-racers="9"] .laps-remaining,
+.lap-counter-grid[data-racers="10"] .laps-remaining {
+  font-size: 19em;
+}
