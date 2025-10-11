@@ -33,7 +33,8 @@ jobs:
           if [ -n "${{ github.event.inputs.sso_version }}" ]; then
             sso_version="${{ github.event.inputs.sso_version }}"
           else
-            sso_version=$(gh release list --repo ${{ github.repository }} --limit 1 --json tagName --jq '.[0].tagName')
+            # Only get releases that start with 'v' (exclude integrated releases)
+            sso_version=$(gh release list --repo ${{ github.repository }} --limit 50 --json tagName --jq '.[] | select(.tagName | startswith("v")) | .tagName' | head -1)
             sso_version=${sso_version#v}
           fi
           echo "Using SSO View Package version: $sso_version"
@@ -98,8 +99,8 @@ jobs:
           sso_version=${{ steps.get_sso_version.outputs.sso_version }}
           echo "Downloading SSO View Package v$sso_version..."
           
-          # Download the SSO View Package release
-          gh release download --repo ${{ github.repository }} --pattern "*.zip" --dir ./sso-download
+          # Download the SSO View Package release from the correct repository
+          gh release download "v$sso_version" --repo ${{ github.repository }} --pattern "*.zip" --dir ./sso-download
           
           # Extract the SSO View Package
           cd sso-download
@@ -114,29 +115,8 @@ jobs:
           echo "Contents of weblynx-download:"
           ls -la ./weblynx-download/
           
-          # Find the WebLynx directory - look for directories that contain WebLynx files
-          # Exclude the Views directory that might be created by SSO package
-          weblynx_dir=""
-          for dir in ./weblynx-download/*/; do
-            if [ -d "$dir" ] && [ "$(basename "$dir")" != "Views" ]; then
-              # Check if this directory contains WebLynx files
-              if find "$dir" -maxdepth 1 -name "*.exe" -o -name "WebLynx*" -o -name "*.dll" | head -1 | grep -q .; then
-                weblynx_dir="$dir"
-                break
-              fi
-            fi
-          done
-          
-          # If no directory found with WebLynx files, use the first non-Views directory
-          if [ -z "$weblynx_dir" ]; then
-            weblynx_dir=$(find ./weblynx-download -maxdepth 1 -type d ! -path ./weblynx-download ! -path "*/Views" | head -1)
-          fi
-          
-          # If still no directory found, use weblynx-download directly
-          if [ -z "$weblynx_dir" ]; then
-            echo "No subdirectory found, using weblynx-download directly"
-            weblynx_dir="./weblynx-download"
-          fi
+          # Use weblynx-download directly since WebLynx files are extracted there
+          weblynx_dir="./weblynx-download"
           
           echo "Using WebLynx directory: $weblynx_dir"
           echo "Contents of WebLynx directory:"
