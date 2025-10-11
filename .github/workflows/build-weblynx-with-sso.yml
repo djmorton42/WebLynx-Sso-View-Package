@@ -38,6 +38,8 @@ jobs:
           fi
           echo "Using SSO View Package version: $sso_version"
           echo "sso_version=$sso_version" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Get WebLynx version
         id: get_weblinx_version
@@ -50,6 +52,8 @@ jobs:
           fi
           echo "Using WebLynx version: $weblinx_version"
           echo "weblinx_version=$weblinx_version" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Download WebLynx release
         run: |
@@ -63,6 +67,8 @@ jobs:
           cd weblinx-download
           unzip -q *.zip
           cd ..
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Download SSO View Package
         run: |
@@ -76,6 +82,8 @@ jobs:
           cd sso-download
           unzip -q *.zip
           cd ..
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Integrate SSO Views into WebLynx
         run: |
