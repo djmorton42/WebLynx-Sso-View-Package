@@ -18,7 +18,7 @@ jobs:
   build-weblynx-with-sso:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write  # needed for creating releases
 
     steps:
       - name: Checkout SSO View Package
@@ -189,14 +189,43 @@ jobs:
           
           echo "Created integrated package: WebLynx-v${weblynx_version}-with-SSO-Views-v${sso_version}-${timestamp}.zip"
           echo "package_name=WebLynx-v${weblynx_version}-with-SSO-Views-v${sso_version}-${timestamp}.zip" >> $GITHUB_OUTPUT
+          echo "timestamp=${timestamp}" >> $GITHUB_OUTPUT
         id: create_package
 
-      - name: Upload integrated package as artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: WebLynx-with-SSO-Views
-          path: ${{ steps.create_package.outputs.package_name }}
-          retention-days: 30
+          tag_name: weblynx-integrated-v${{ steps.get_weblynx_version.outputs.weblynx_version }}-sso-v${{ steps.get_sso_version.outputs.sso_version }}-${{ steps.create_package.outputs.timestamp }}
+          name: WebLynx ${{ steps.get_weblynx_version.outputs.weblynx_version }} with SSO Views ${{ steps.get_sso_version.outputs.sso_version }}
+          files: ${{ steps.create_package.outputs.package_name }}
+          body: |
+            ## WebLynx with SSO Views Integration
+            
+            This release contains WebLynx ${{ steps.get_weblynx_version.outputs.weblynx_version }} with SSO View Package ${{ steps.get_sso_version.outputs.sso_version }} pre-integrated.
+            
+            ### What's Included
+            - **WebLynx Application**: Complete WebLynx installation
+            - **SSO Views**: All SSO view packages pre-installed
+              - announcements
+              - broadcast_race_overlay
+              - broadcast_results
+              - lap_counter
+              - logo_only
+            
+            ### Installation
+            1. Download the zip file
+            2. Extract to your desired location
+            3. Run `WebLynx.exe` to start the application
+            4. The SSO views will be available in the Views menu
+            
+            ### Build Information
+            - **Build Date**: ${{ steps.create_package.outputs.timestamp }}
+            - **WebLynx Version**: ${{ steps.get_weblynx_version.outputs.weblynx_version }}
+            - **SSO View Package Version**: ${{ steps.get_sso_version.outputs.sso_version }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary
         run: |
