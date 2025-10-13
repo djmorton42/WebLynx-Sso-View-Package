@@ -1,0 +1,1 @@
+Simplified overlay with race clock and racer list (no lap times or lap counts)
