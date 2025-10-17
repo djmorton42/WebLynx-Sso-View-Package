@@ -149,8 +149,8 @@ jobs:
           echo "Final WebLynx directory contents:"
           ls -la "$weblynx_dir"
 
-      - name: Generate SSO Views List
-        id: generate_views_list
+      - name: Generate Release Body
+        id: generate_release_body
         run: |
           # Generate list of SSO views from the sso-download directory
           views_list=""
@@ -169,12 +169,41 @@ jobs:
             fi
           done
           
-          echo "Generated views list:"
-          echo "$views_list"
-          echo "views_list<<EOF" >> $GITHUB_OUTPUT
-          echo "$views_list" >> $GITHUB_OUTPUT
+          # Generate the complete release body
+          weblynx_version="${{ steps.get_weblynx_version.outputs.weblynx_version }}"
+          sso_version="${{ steps.get_sso_version.outputs.sso_version }}"
+          timestamp="${{ steps.create_package.outputs.timestamp }}"
+          
+          # Create the release body using echo statements instead of here-document
+          {
+            echo "## WebLynx with SSO Views Integration"
+            echo ""
+            echo "This release contains WebLynx $weblynx_version with SSO View Package $sso_version pre-integrated."
+            echo ""
+            echo "### What's Included"
+            echo "- **WebLynx Application**: Complete WebLynx installation"
+            echo "- **SSO Views**: All SSO view packages pre-installed"
+            echo "$views_list"
+            echo ""
+            echo "### Installation"
+            echo "1. Download the zip file"
+            echo "2. Extract to your desired location"
+            echo "3. Run \`WebLynx.exe\` to start the application"
+            echo "4. The SSO views will be available in the Views menu"
+            echo ""
+            echo "### Build Information"
+            echo "- **Build Date**: $timestamp"
+            echo "- **WebLynx Version**: $weblynx_version"
+            echo "- **SSO View Package Version**: $sso_version"
+          } > release_body.md
+          
+          echo "Generated release body:"
+          cat release_body.md
+          
+          # Set the release body as an output
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          cat release_body.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-        id: generate_views_list
 
       - name: Create integrated WebLynx package
         run: |
@@ -205,26 +234,7 @@ jobs:
           tag_name: weblynx-integrated-v${{ steps.get_weblynx_version.outputs.weblynx_version }}-sso-v${{ steps.get_sso_version.outputs.sso_version }}-${{ steps.create_package.outputs.timestamp }}
           name: WebLynx ${{ steps.get_weblynx_version.outputs.weblynx_version }} with SSO Views ${{ steps.get_sso_version.outputs.sso_version }}
           files: ${{ steps.create_package.outputs.package_name }}
-          body: |
-            ## WebLynx with SSO Views Integration
-            
-            This release contains WebLynx ${{ steps.get_weblynx_version.outputs.weblynx_version }} with SSO View Package ${{ steps.get_sso_version.outputs.sso_version }} pre-integrated.
-            
-            ### What's Included
-            - **WebLynx Application**: Complete WebLynx installation
-            - **SSO Views**: All SSO view packages pre-installed
-${{ steps.generate_views_list.outputs.views_list }}
-            
-            ### Installation
-            1. Download the zip file
-            2. Extract to your desired location
-            3. Run `WebLynx.exe` to start the application
-            4. The SSO views will be available in the Views menu
-            
-            ### Build Information
-            - **Build Date**: ${{ steps.create_package.outputs.timestamp }}
-            - **WebLynx Version**: ${{ steps.get_weblynx_version.outputs.weblynx_version }}
-            - **SSO View Package Version**: ${{ steps.get_sso_version.outputs.sso_version }}
+          body: ${{ steps.generate_release_body.outputs.release_body }}
           draft: false
           prerelease: false
         env:
