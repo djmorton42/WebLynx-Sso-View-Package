@@ -149,6 +149,33 @@ jobs:
           echo "Final WebLynx directory contents:"
           ls -la "$weblynx_dir"
 
+      - name: Generate SSO Views List
+        id: generate_views_list
+        run: |
+          # Generate list of SSO views from the sso-download directory
+          views_list=""
+          for dir in ./sso-download/*/; do
+            if [ -d "$dir" ]; then
+              dirname=$(basename "$dir")
+              # Skip non-view directories (like if there are any metadata files)
+              if [ "$dirname" != "Views" ] && [ -f "$dir/template.html" ]; then
+                if [ -z "$views_list" ]; then
+                  views_list="              - $dirname"
+                else
+                  views_list="$views_list
+              - $dirname"
+                fi
+              fi
+            fi
+          done
+          
+          echo "Generated views list:"
+          echo "$views_list"
+          echo "views_list<<EOF" >> $GITHUB_OUTPUT
+          echo "$views_list" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        id: generate_views_list
+
       - name: Create integrated WebLynx package
         run: |
           weblynx_version=${{ steps.get_weblynx_version.outputs.weblynx_version }}
@@ -186,11 +213,7 @@ jobs:
             ### What's Included
             - **WebLynx Application**: Complete WebLynx installation
             - **SSO Views**: All SSO view packages pre-installed
-              - announcements
-              - broadcast_race_overlay
-              - broadcast_results
-              - lap_counter
-              - logo_only
+${{ steps.generate_views_list.outputs.views_list }}
             
             ### Installation
             1. Download the zip file
