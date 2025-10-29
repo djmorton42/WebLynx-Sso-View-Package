@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="icon" type="image/png" href="/views/broadcast_race_overlay_affiliation/sso-logo.png">
+    <link rel="stylesheet" href="/views/broadcast_race_overlay_affiliation/styles.css">
+    {{VIEW_PROPERTIES}}
+  </head>
+  <body>
+    <!-- Logo in top-right corner -->
+    <div class="sso-logo">
+      <img src="/views/broadcast_race_overlay_affiliation/sso-logo.png" alt="SSO Logo">
+    </div>
+    
+    <!-- Overall race time in bottom-right corner -->
+    <div class="race-clock" id="race-clock">00:00.0</div>
+    
+    <!-- Event name below race clock -->
+    <div class="event-name" id="event-name">Event Name</div>
+    
+    <!-- Racer information blocks stacked vertically on bottom-left -->
+    <div class="racer-stack" id="racer-stack">
+      <!-- Racers will be populated by JavaScript -->
+    </div>
+    
+    <!-- HTML5 Template for racer blocks -->
+    <template id="racer-template">
+      <div class="racer-block">
+        <div class="lane-color"></div>
+        <div class="racer-info">
+          <div class="affiliation"></div>
+        </div>
+      </div>
+    </template>
+    
+    <script src="/views/shared/weblynx-helpers.js"></script>
+    <script>
+      // Configuration - now using externalized view properties
+      const UPDATE_INTERVAL = VIEW_CONFIG.updateInterval;
+      const SORT_BY = 'lane'; // 'place' or 'lane'
+      
+      function getLaneColor(lane) {
+        return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
+      }
+      
+      
+      function createRacerBlock(racer, raceStatus, halfLapModeEnabled) {
+        const template = document.getElementById('racer-template');
+        const clone = template.content.cloneNode(true);
+        
+        // Populate the cloned template
+        clone.querySelector('.lane-color').style.backgroundColor = getLaneColor(racer.lane);
+        clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
+        
+        return clone;
+      }
+      
+      function positionEventName() {
+        const racerStack = document.getElementById('racer-stack');
+        const eventName = document.getElementById('event-name');
+        
+        if (racerStack && eventName) {
+          const stackRect = racerStack.getBoundingClientRect();
+          const eventHeight = 40; // Approximate height of event name box
+          const spacing = 4; // Space between event name and racer stack
+          
+          // Position event name above the racer stack
+          eventName.style.position = 'fixed';
+          eventName.style.bottom = (window.innerHeight - stackRect.top + spacing) + 'px';
+          // Don't set left or width - let CSS handle the positioning
+        }
+      }
+      
+      function updateRaceData() {
+        WebLynx.updateRaceData((data, error) => {
+          if (error) {
+            console.error('Error fetching race data:', error);
+            return;
+          }
+          
+          // Update race clock
+          document.getElementById('race-clock').textContent = WebLynx.formatRaceTime(data.currentTime);
+          
+          // Update event name with event number
+          const eventName = data.event?.eventName || 'Event Name';
+          const eventNumber = data.event?.eventNumber || '';
+          const displayName = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
+          document.getElementById('event-name').textContent = displayName;
+          
+          // Update racer stack
+          const racerStack = document.getElementById('racer-stack');
+          racerStack.innerHTML = '';
+          
+          // Only display racers that are actually in the race
+          const activeRacers = WebLynx.getActiveRacers(data.racers);
+          const halfLapModeEnabled = data.halfLapModeEnabled || false;
+          
+          // Add racer blocks (2-10 racers supported)
+          activeRacers.forEach(racer => {
+            racerStack.appendChild(createRacerBlock(racer, data.status, halfLapModeEnabled));
+          });
+          
+          // Position event name above the racer stack
+          positionEventName();
+        }, SORT_BY);
+      }
+      
+      // Start updating
+      WebLynx.startAutoUpdate(updateRaceData, UPDATE_INTERVAL, SORT_BY);
+    </script>
+  </body>
+</html>
