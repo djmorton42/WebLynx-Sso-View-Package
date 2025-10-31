@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Broadcast Race Overlay - Test</title>
+    {{VIEW_PROPERTIES}}
+    <style>
+      /* CSS Reset for consistent rendering across browsers */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: #f0f0f0; /* Light gray background for testing */
+        color: #000;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Logo in top-right corner */
+      .sso-logo {
+        position: fixed;
+        top: 30px;
+        right: 50px;
+        z-index: 1000;
+        opacity: 0.9;
+        background-color: #fff;
+        border: 2px solid #000;
+        border-radius: 8px;
+        padding: 10px;
+        width: 120px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+        text-align: center;
+      }
+
+      /* Overall race time in bottom-right corner */
+      .race-clock {
+        position: fixed;
+        bottom: 60px;
+        right: 50px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid #000;
+        border-radius: 8px;
+        padding: 15px 20px;
+        font-size: 2.2em;
+        font-weight: bold;
+        color: #000;
+        text-align: center;
+        min-width: 180px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+      }
+
+      /* Event name above racer stack */
+      .event-name {
+        position: fixed;
+        left: 50px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid #000;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #000;
+        text-align: center;
+        width: 420px; /* Match racer block width exactly */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        margin-bottom: 4px;
+        box-sizing: border-box; /* Ensure padding and border are included in width */
+        /* Position will be set dynamically by JavaScript */
+      }
+
+      /* Racer stack on bottom-left */
+      .racer-stack {
+        position: fixed;
+        bottom: 30px;
+        left: 50px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        z-index: 1000;
+        max-height: calc(100vh - 60px);
+        overflow-y: auto;
+      }
+
+      /* Individual racer block */
+      .racer-block {
+        display: flex;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid #000;
+        border-radius: 6px;
+        padding: 8px 12px;
+        width: 420px; /* Changed from min-width to exact width */
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box; /* Ensure padding and border are included in width */
+      }
+
+      /* Lane color indicator */
+      .lane-color {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        margin-right: 10px;
+        border: 2px solid #000;
+        flex-shrink: 0;
+      }
+
+      /* Racer information section */
+      .racer-info {
+        flex: 1;
+        margin-right: 10px;
+      }
+
+      .racer-name {
+        font-weight: bold;
+        font-size: 0.95em;
+        color: #000;
+        margin-bottom: 1px;
+        text-transform: uppercase;
+      }
+
+      .affiliation {
+        font-size: 0.9em;
+        color: #666;
+        font-weight: 500;
+      }
+
+      /* Time display */
+      .time {
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1em;
+        margin-right: 10px;
+        min-width: 80px;
+        text-align: right;
+      }
+
+      /* Lap count display */
+      .lap-count {
+        background-color: #f0f0f0;
+        color: #000;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 1.1em;
+        font-weight: bold;
+        min-width: 40px;
+        text-align: center;
+        border: 1px solid #ccc;
+      }
+
+      /* Special styling for half lap display */
+      .lap-count.half-lap {
+        display: inline-block;
+        white-space: nowrap;
+      }
+
+      .lap-count .half-lap-fraction {
+        font-size: 0.8em;
+        vertical-align: baseline;
+        margin-left: 0.1em;
+        line-height: 1;
+        display: inline;
+      }
+
+      /* Responsive adjustments for different screen sizes */
+      @media (max-width: 1920px) {
+        body {
+          width: 100vw;
+          height: 100vh;
+        }
+        
+        .racer-block {
+          min-width: 350px;
+        }
+        
+        .race-clock {
+          font-size: 2em;
+          min-width: 160px;
+        }
+      }
+
+      /* Ensure text is always readable */
+      .racer-block,
+      .race-clock {
+        text-shadow: none;
+      }
+
+      /* Smooth transitions for dynamic updates */
+      .racer-block {
+        transition: all 0.2s ease-in-out;
+      }
+
+      .race-clock {
+        transition: all 0.2s ease-in-out;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Logo in top-right corner -->
+    <div class="sso-logo">
+      SSO LOGO
+    </div>
+    
+    <!-- Overall race time in bottom-right corner -->
+    <div class="race-clock" id="race-clock">00:00.0</div>
+    
+    <!-- Event name below race clock -->
+    <div class="event-name" id="event-name">Event Name</div>
+    
+    <!-- Racer information blocks stacked vertically on bottom-left -->
+    <div class="racer-stack" id="racer-stack">
+      <!-- Sample racer data will be populated by JavaScript -->
+    </div>
+    
+    <!-- HTML5 Template for racer blocks -->
+    <template id="racer-template">
+      <div class="racer-block">
+        <div class="lane-color"></div>
+        <div class="racer-info">
+          <div class="racer-name"></div>
+          <div class="affiliation"></div>
+        </div>
+        <div class="time"></div>
+        <div class="lap-count"></div>
+      </div>
+    </template>
+    
+    <script>
+      // Configuration
+      const UPDATE_INTERVAL = 250; // milliseconds
+      const SORT_BY = 'place'; // 'place' or 'lane'
+      
+      // Sample data for testing
+      const sampleRacers = [
+        {
+          lane: 1,
+          name: "Racer McRacerFace",
+          affiliation: "Cambridge SSC",
+          cumulativeSplitTime: "00:01:04.234",
+          delayedLapsRemaining: 4,
+          place: 1,
+          hasFirstCrossing: true
+        },
+        {
+          lane: 2,
+          name: "Speed Demon",
+          affiliation: "Toronto Speed Club",
+          cumulativeSplitTime: "00:01:05.123",
+          delayedLapsRemaining: 3,
+          place: 2,
+          hasFirstCrossing: true
+        },
+        {
+          lane: 3,
+          name: "Lightning Bolt",
+          affiliation: "Vancouver Ice",
+          cumulativeSplitTime: "00:01:05.456",
+          delayedLapsRemaining: 3,
+          place: 3,
+          hasFirstCrossing: true
+        },
+        {
+          lane: 4,
+          name: "Ice Queen",
+          affiliation: "Calgary Blades",
+          cumulativeSplitTime: "00:01:06.789",
+          delayedLapsRemaining: 2,
+          place: 4,
+          hasFirstCrossing: true
+        },
+        {
+          lane: 5,
+          name: "Speed Skater Pro",
+          affiliation: "Edmonton Eagles",
+          cumulativeSplitTime: "00:01:07.012",
+          delayedLapsRemaining: 2,
+          place: 5,
+          hasFirstCrossing: true
+        }
+      ];
+      
+      // Lane colors now provided by VIEW_CONFIG
+      
+      function formatTime(timeSpanString) {
+        if (!timeSpanString) return '00:00.000';
+        
+        // TimeSpan is serialized as "HH:mm:ss.fffffff" format
+        // We need to parse it and format as "mm:ss.fff"
+        const parts = timeSpanString.split(':');
+        if (parts.length !== 3) return '00:00.000';
+        
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const secondsParts = parts[2].split('.');
+        const seconds = parseInt(secondsParts[0]) || 0;
+        
+        // Handle the fractional seconds part (7 digits)
+        let milliseconds = 0;
+        if (secondsParts[1]) {
+          const fractionalPart = secondsParts[1].padEnd(7, '0');
+          milliseconds = Math.floor(parseInt(fractionalPart.substring(0, 3)) || 0);
+        }
+        
+        const totalMinutes = hours * 60 + minutes;
+        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
+        const formattedSeconds = seconds.toString().padStart(2, '0');
+        const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
+        
+        return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
+      }
+      
+      function formatRaceTime(timeSpanString) {
+        if (!timeSpanString) return '00:00.0';
+        
+        // TimeSpan is serialized as "HH:mm:ss.fffffff" format
+        // We need to parse it and format as "mm:ss.f"
+        const parts = timeSpanString.split(':');
+        if (parts.length !== 3) return '00:00.0';
+        
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const secondsParts = parts[2].split('.');
+        const seconds = parseInt(secondsParts[0]) || 0;
+        
+        // Handle the fractional seconds part (7 digits) - take first digit for tenths
+        let tenths = 0;
+        if (secondsParts[1]) {
+          const fractionalPart = secondsParts[1].padEnd(7, '0');
+          tenths = Math.floor(parseInt(fractionalPart.substring(0, 1)) || 0);
+        }
+        
+        const totalMinutes = hours * 60 + minutes;
+        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
+        const formattedSeconds = seconds.toString().padStart(2, '0');
+        
+        return `${formattedMinutes}:${formattedSeconds}.${tenths}`;
+      }
+      
+      function getLaneColor(lane) {
+        return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
+      }
+      
+      function formatLapsDisplay(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {
+        if (lapsRemaining === null || lapsRemaining === undefined) {
+          return '-';
+        }
+        
+        let displayValue = lapsRemaining;
+        
+        // Apply half-lap mode display logic
+        if (halfLapModeEnabled) {
+          if (raceStatus === 'NotStarted' || raceStatus === 0) {
+            // Before race starts, show the actual value (including half laps)
+            displayValue = lapsRemaining;
+          } else {
+            // After race starts, check if this is a half-lap race
+            if (lapsRemaining % 1 === 0.5) {
+              // Half-lap race: show the whole number part (visually remove the 1/2)
+              displayValue = Math.floor(lapsRemaining);
+            } else {
+              // Whole lap race: always subtract 1 after race starts
+              displayValue = lapsRemaining - 1;
+              
+              // If the value would be negative, show hyphen
+              if (displayValue < 0) {
+                return '-';
+              }
+            }
+          }
+        } else {
+          // Half-lap mode disabled: always subtract 1 from display value
+          displayValue = lapsRemaining - 1;
+          
+          // If the value would be negative, show hyphen
+          if (displayValue < 0) {
+            return '-';
+          }
+        }
+        
+        // If race has started (Running, Paused, or Finished), only show whole numbers
+        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+          return Math.floor(displayValue).toString();
+        }
+        
+        // Before race starts, show decimal values including half laps
+        if (displayValue % 1 === 0.5) {
+          // Show as "13 1/2" format for half laps
+          const wholePart = Math.floor(displayValue);
+          return wholePart + ' 1/2';
+        }
+        
+        // Show as decimal for other cases
+        return displayValue.toString();
+      }
+      
+      function createLapsDisplayHTML(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {
+        if (lapsRemaining === null || lapsRemaining === undefined) {
+          return '-';
+        }
+        
+        // Apply half-lap mode display logic
+        let displayValue = lapsRemaining;
+        
+        if (halfLapModeEnabled) {
+          if (raceStatus === 'NotStarted' || raceStatus === 0) {
+            // Before race starts, show the actual value (including half laps)
+            displayValue = lapsRemaining;
+          } else {
+            // After race starts, check if this is a half-lap race
+            if (lapsRemaining % 1 === 0.5) {
+              // Half-lap race: show the whole number part (visually remove the 1/2)
+              displayValue = Math.floor(lapsRemaining);
+            } else {
+              // Whole lap race: always subtract 1 after race starts
+              displayValue = lapsRemaining - 1;
+              
+              // If the value would be negative, show hyphen
+              if (displayValue < 0) {
+                return '-';
+              }
+            }
+          }
+        } else {
+          // Half-lap mode disabled: always subtract 1 from display value
+          displayValue = lapsRemaining - 1;
+          
+          // If the value would be negative, show hyphen
+          if (displayValue < 0) {
+            return '-';
+          }
+        }
+        
+        // If race has started (Running, Paused, or Finished), only show whole numbers
+        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+          return Math.floor(displayValue).toString();
+        }
+        
+        // Before race starts, show decimal values including half laps
+        if (displayValue % 1 === 0.5) {
+          // Show as "13" with small "1/2" for half laps
+          const wholePart = Math.floor(displayValue);
+          return `${wholePart}<span class="half-lap-fraction">1/2</span>`;
+        }
+        
+        // Show as decimal for other cases
+        return displayValue.toString();
+      }
+      
+      function createRacerBlock(racer, raceStatus, halfLapModeEnabled) {
+        const template = document.getElementById('racer-template');
+        const clone = template.content.cloneNode(true);
+        
+        // Populate the cloned template
+        clone.querySelector('.lane-color').style.backgroundColor = getLaneColor(racer.lane);
+        clone.querySelector('.racer-name').textContent = racer.name || '-';
+        clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
+        clone.querySelector('.time').textContent = formatTime(racer.cumulativeSplitTime);
+        
+        const lapCountElement = clone.querySelector('.lap-count');
+        const isHalfLap = racer.delayedLapsRemaining !== null && 
+                         racer.delayedLapsRemaining !== undefined && 
+                         racer.delayedLapsRemaining % 1 === 0.5 && 
+                         (raceStatus === 'NotStarted' || raceStatus === 0);
+        
+        if (isHalfLap) {
+          lapCountElement.innerHTML = createLapsDisplayHTML(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
+          lapCountElement.classList.add('half-lap');
+        } else {
+          lapCountElement.textContent = formatLapsDisplay(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
+        }
+        
+        return clone;
+      }
+      
+      function positionEventName() {
+        const racerStack = document.getElementById('racer-stack');
+        const eventName = document.getElementById('event-name');
+        
+        if (racerStack && eventName) {
+          const stackRect = racerStack.getBoundingClientRect();
+          const eventHeight = 40; // Approximate height of event name box
+          const spacing = 4; // Space between event name and racer stack
+          
+          // Position event name above the racer stack
+          eventName.style.position = 'fixed';
+          eventName.style.bottom = (window.innerHeight - stackRect.top + spacing) + 'px';
+          // Don't set left or width - let CSS handle the positioning
+        }
+      }
+      
+      function loadSampleData() {
+        // Update race clock
+        document.getElementById('race-clock').textContent = '1:06.3';
+        
+        // Update event name
+        document.getElementById('event-name').textContent = 'Event 1 - 500m Men';
+        
+        // Update racer stack
+        const racerStack = document.getElementById('racer-stack');
+        racerStack.innerHTML = '';
+        
+        // Add sample racer blocks
+        const raceStatus = 'Running';
+        const halfLapModeEnabled = true;
+        sampleRacers.forEach(racer => {
+          racerStack.appendChild(createRacerBlock(racer, raceStatus, halfLapModeEnabled));
+        });
+        
+        // Position event name above the racer stack
+        positionEventName();
+      }
+      
+      // Load sample data when page loads
+      document.addEventListener('DOMContentLoaded', loadSampleData);
+    </script>
+  </body>
+</html>

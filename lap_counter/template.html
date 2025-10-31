@@ -72,9 +72,17 @@
             return;
           }
           
+          // Check if lap board is disabled via key-value
+          const disableLapBoard = data.keyValues && data.keyValues['disable_lap_board'] === 'true';
+          
           // Update lap counter grid
           const lapCounterGrid = document.getElementById('lap-counter-grid');
           lapCounterGrid.innerHTML = '';
+          
+          // If disabled, show empty screen and return early
+          if (disableLapBoard) {
+            return;
+          }
           
           // Only display racers that are actually in the race
           const activeRacers = WebLynx.getActiveRacers(data.racers);

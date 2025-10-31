@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="icon" type="image/png" href="/views/lap_counter_split/sso-logo.png">
-    <link rel="stylesheet" href="/views/lap_counter_split/styles.css">
+    <link rel="icon" type="image/png" href="/views/lap_counter_with_leader/sso-logo.png">
+    <link rel="stylesheet" href="/views/lap_counter_with_leader/styles.css">
     {{VIEW_PROPERTIES}}
   </head>
   <body>
@@ -109,9 +109,21 @@
             return;
           }
           
+          // Check if lap board is disabled via key-value
+          const disableLapBoard = data.keyValues && data.keyValues['disable_lap_board'] === 'true';
+          
           // Update minimum laps (left side)
           const minimumLapsElement = document.getElementById('minimum-laps');
           const activeRacers = WebLynx.getActiveRacers(data.racers);
+          
+          // If disabled, show empty screen and return early
+          if (disableLapBoard) {
+            minimumLapsElement.textContent = '';
+            minimumLapsElement.innerHTML = '';
+            const lapCounterGrid = document.getElementById('lap-counter-grid');
+            lapCounterGrid.innerHTML = '';
+            return;
+          }
           
           if (activeRacers.length === 0) {
             minimumLapsElement.textContent = '-';

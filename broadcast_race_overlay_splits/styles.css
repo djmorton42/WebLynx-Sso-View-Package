@@ -1,0 +1,197 @@
+/* CSS Reset for consistent rendering across browsers */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: transparent; /* Transparent for overlay */
+  color: #000;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Logo in top-right corner */
+.sso-logo {
+  position: fixed;
+  top: 30px;
+  right: 50px;
+  z-index: 1000;
+  opacity: 0.9;
+}
+
+.sso-logo img {
+  max-height: 120px;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Overall race time in bottom-right corner */
+.race-clock {
+  position: fixed;
+  bottom: 60px;
+  right: 50px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 2px solid #000;
+  border-radius: 8px;
+  padding: 15px 20px;
+  font-size: 2.2em;
+  font-weight: bold;
+  color: #000;
+  text-align: center;
+  min-width: 180px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+/* Event name above racer stack */
+.event-name {
+  position: fixed;
+  left: 50px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 2px solid #000;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #000;
+  text-align: center;
+  width: 420px; /* Match racer block width exactly */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  margin-bottom: 4px;
+  box-sizing: border-box; /* Ensure padding and border are included in width */
+  /* Position will be set dynamically by JavaScript */
+}
+
+/* Racer stack on bottom-left */
+.racer-stack {
+  position: fixed;
+  bottom: 30px;
+  left: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1000;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+/* Individual racer block */
+.racer-block {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 2px solid #000;
+  border-radius: 6px;
+  padding: 8px 12px;
+  width: 420px; /* Changed from min-width to exact width */
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box; /* Ensure padding and border are included in width */
+}
+
+      /* Lane color indicator */
+      .lane-color {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        margin-right: 10px;
+        border: 2px solid #000;
+        flex-shrink: 0;
+      }
+
+/* Racer information section */
+.racer-info {
+  flex: 1;
+  margin-right: 10px;
+}
+
+      .racer-name {
+        font-weight: bold;
+        font-size: 0.95em;
+        color: #000;
+        margin-bottom: 1px;
+        text-transform: uppercase;
+      }
+
+.affiliation {
+  font-size: 0.9em;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Time display */
+.time {
+  color: #000;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-right: 10px;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Lap count display */
+.lap-count {
+  background-color: #f0f0f0;
+  color: #000;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 1.1em;
+  font-weight: bold;
+  min-width: 40px;
+  text-align: center;
+  border: 1px solid #ccc;
+}
+
+/* Special styling for half lap display */
+.lap-count.half-lap {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.lap-count .half-lap-fraction {
+  font-size: 0.8em;
+  vertical-align: baseline;
+  margin-left: 0.1em;
+  line-height: 1;
+  display: inline;
+}
+
+/* Responsive adjustments for different screen sizes */
+@media (max-width: 1920px) {
+  body {
+    width: 100vw;
+    height: 100vh;
+  }
+  
+  .racer-block {
+    min-width: 350px;
+  }
+  
+  .race-clock {
+    font-size: 2em;
+    min-width: 160px;
+  }
+}
+
+/* Ensure text is always readable */
+.racer-block,
+.race-clock {
+  text-shadow: none;
+}
+
+/* Smooth transitions for dynamic updates */
+.racer-block {
+  transition: all 0.2s ease-in-out;
+}
+
+.race-clock {
+  transition: all 0.2s ease-in-out;
+}
