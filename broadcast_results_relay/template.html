@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="icon" type="image/png" href="/views/broadcast_results_relay/sso-logo.png">
+    <link rel="stylesheet" href="/views/broadcast_results_relay/styles.css">
+    {{VIEW_PROPERTIES}}
+  </head>
+  <body>
+    <div class="broadcast-overlay">
+      <!-- Header Section -->
+      <div class="header-section">
+        <div class="meet-title" id="meet-title">{{MEET_TITLE}}</div>
+        <div class="event-name" id="event-name">{{EVENT_SUBTITLE}}</div>
+        <div class="unofficial-indicator">{{UNOFFICIAL_RESULTS_TEXT}}</div>
+        <div class="sso-logo">
+          <img src="/views/broadcast_results_relay/sso-logo.png" alt="SSO Logo" />
+        </div>
+      </div>
+      
+      <!-- Race Details Bar -->
+      <div class="race-details-bar" id="race-details-bar">
+        No active race
+      </div>
+      
+      <!-- Results Table -->
+      <div class="results-container" id="results-container">
+        <!-- Results will be populated by JavaScript -->
+      </div>
+    </div>
+    
+    <!-- HTML5 Template for result rows -->
+    <template id="result-template">
+      <div class="result-row">
+        <div class="position"></div>
+        <div class="racer-info">
+          <div class="racer-name"></div>
+          <div class="affiliation"></div>
+        </div>
+        <div class="lane-color"></div>
+        <div class="final-time"></div>
+      </div>
+    </template>
+    
+    <script src="/views/shared/weblynx-helpers.js"></script>
+    <script>
+      // Configuration - now using externalized view properties
+      const UPDATE_INTERVAL = 1000; // milliseconds - less frequent for results
+      
+      function getLaneColor(lane) {
+        return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
+      }
+      
+      /**
+       * Extract color name from racer name (e.g., "TEAM BLACK" -> "BLACK")
+       * Looks for color names in the racer name after "TEAM" or as standalone words
+       */
+      function extractColorNameFromRacerName(racerName) {
+        if (!racerName) return null;
+        
+        const nameUpper = racerName.toUpperCase();
+        
+        // Try to find "TEAM [COLOR]" pattern
+        const teamMatch = nameUpper.match(/TEAM\s+([A-Z\s]+)/);
+        if (teamMatch) {
+          return teamMatch[1].trim();
+        }
+        
+        // If no "TEAM" prefix, look for standalone color names
+        // This allows for names like "BLACK TEAM" or just "BLACK"
+        const laneColorNames = VIEW_CONFIG.laneColorNames || {};
+        const colorNames = Object.values(laneColorNames).map(name => name.toUpperCase());
+        
+        // Find the longest matching color name (to handle "NAVY BLUE" vs "BLUE")
+        let bestMatch = null;
+        let bestMatchLength = 0;
+        
+        for (const colorName of colorNames) {
+          // Check if the color name appears in the racer name
+          if (nameUpper.includes(colorName)) {
+            if (colorName.length > bestMatchLength) {
+              bestMatch = colorName;
+              bestMatchLength = colorName.length;
+            }
+          }
+        }
+        
+        return bestMatch;
+      }
+      
+      /**
+       * Get lane color based on color name found in racer name
+       * Case-insensitive lookup in LaneColorNames, then uses that index for LaneColors
+       */
+      function getLaneColorFromRacerName(racerName) {
+        const colorName = extractColorNameFromRacerName(racerName);
+        
+        if (!colorName) {
+          // Fall back to default color if no color name found
+          return VIEW_CONFIG.defaultLaneColor;
+        }
+        
+        // Find the lane index where this color name matches (case-insensitive)
+        const laneColorNames = VIEW_CONFIG.laneColorNames || {};
+        for (const [laneIndex, configuredColorName] of Object.entries(laneColorNames)) {
+          if (configuredColorName.toUpperCase() === colorName) {
+            // Use the lane index to get the corresponding color
+            return VIEW_CONFIG.laneColors?.[laneIndex] || VIEW_CONFIG.defaultLaneColor;
+          }
+        }
+        
+        // If no match found, use default
+        return VIEW_CONFIG.defaultLaneColor;
+      }
+      
+      function createResultRow(racer, hasPlaces) {
+        const template = document.getElementById('result-template');
+        const clone = template.content.cloneNode(true);
+        
+        // Populate the cloned template
+        const positionElement = clone.querySelector('.position');
+        if (racer.hasPlaceData) {
+          positionElement.textContent = racer.placeText;
+        } else {
+          positionElement.textContent = `Lane ${racer.lane}`;
+        }
+        
+        clone.querySelector('.racer-name').textContent = racer.name || '-';
+        clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
+        
+        // Use color from racer name instead of lane number
+        const laneColor = getLaneColorFromRacerName(racer.name);
+        clone.querySelector('.lane-color').style.backgroundColor = laneColor;
+        
+        // Set the racer card border to match the lane color
+        const resultRow = clone.querySelector('.result-row');
+        resultRow.style.border = `2px solid ${laneColor}`;
+        
+        // Show/hide time box based on whether any racers have places
+        // and whether this specific racer has an alpha code (DNF, DNS, etc.)
+        const timeElement = clone.querySelector('.final-time');
+        const hasAlphaCode = racer.hasPlaceData && WebLynx.isAlphaCode(racer.placeText);
+        
+        if (hasPlaces && !hasAlphaCode) {
+          // Show final time if available, otherwise show cumulative split time
+          const timeToShow = racer.finalTime || racer.cumulativeSplitTime;
+          timeElement.textContent = WebLynx.formatTime(timeToShow);
+          timeElement.style.display = 'block';
+        } else {
+          timeElement.style.display = 'none';
+        }
+        
+        return clone;
+      }
+      
+      function updateResultsData() {
+        WebLynx.updateRaceData((data, error) => {
+          if (error) {
+            console.error('Error fetching race data:', error);
+            return;
+          }
+          
+          // Update meet title and event name if available
+          if (data.event) {
+            // You might want to customize these based on your data structure
+            // For now, using the default values from the template
+          }
+          
+          // Update race details bar
+          if (data.event) {
+            const eventName = data.event.eventName || 'Race Event';
+            const eventNumber = data.event.eventNumber || '';
+            const raceDetails = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
+            document.getElementById('race-details-bar').textContent = raceDetails;
+          }
+          
+          // Update results container
+          const resultsContainer = document.getElementById('results-container');
+          resultsContainer.innerHTML = '';
+          
+          // Display all racers (already sorted by server)
+          const allRacers = WebLynx.getActiveRacers(data.racers);
+          const sortedRacers = allRacers; // Server already sorts correctly
+          
+          // Apply dynamic sizing class based on number of racers
+          resultsContainer.className = 'results-container';
+          if (sortedRacers.length >= 2 && sortedRacers.length <= 10) {
+            resultsContainer.classList.add(`racers-${sortedRacers.length}`);
+          }
+          
+          // Check if any racers have places set
+          const hasPlaces = sortedRacers.some(racer => racer.hasPlaceData);
+          
+          // Show/hide unofficial results indicator based on whether places are set
+          const unofficialIndicator = document.querySelector('.unofficial-indicator');
+          if (unofficialIndicator) {
+            unofficialIndicator.style.display = hasPlaces ? 'block' : 'none';
+          }
+          
+          // Create result rows
+          sortedRacers.forEach(racer => {
+            const row = createResultRow(racer, hasPlaces);
+            resultsContainer.appendChild(row);
+          });
+        }, 'place');
+      }
+      
+      // Start updating
+      WebLynx.startAutoUpdate(updateResultsData, UPDATE_INTERVAL, 'place');
+    </script>
+  </body>
+</html>
+
