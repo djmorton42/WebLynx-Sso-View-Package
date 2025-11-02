@@ -26,12 +26,46 @@
       
       <!-- Sponsors Banner -->
       <div class="sponsors-banner">
-        <div class="sponsors-text">Thank you to our partners</div>
-        <div class="sponsors-logos">
-          <img src="/views/announcements/sponsors/cao.avif" alt="CAO" class="sponsor-logo" />
-          <img src="/views/announcements/sponsors/csi.avif" alt="CSI" class="sponsor-logo" />
-          <img src="/views/announcements/sponsors/nagano.avif" alt="Nagano" class="sponsor-logo" />
-          <img src="/views/announcements/sponsors/ontario.avif" alt="Ontario" class="sponsor-logo" />
+        <div class="sponsors-left">
+          <div class="sponsors-text">Thank you to our partners</div>
+          <div class="sponsors-logos">
+            <img src="/views/announcements/sponsors/cao.avif" alt="CAO" class="sponsor-logo" />
+            <img src="/views/announcements/sponsors/csi.avif" alt="CSI" class="sponsor-logo" />
+            <img src="/views/announcements/sponsors/nagano.avif" alt="Nagano" class="sponsor-logo" />
+            <img src="/views/announcements/sponsors/ontario.avif" alt="Ontario" class="sponsor-logo" />
+          </div>
+        </div>
+        <div class="sponsors-right">
+          <div class="sponsor-title">CAMBRIDGE SSC WOULD LIKE TO THANK OUR SPONSORS:</div>
+          <div class="sponsor-slides">
+            <div class="sponsor-slide active" data-slide="0">
+              <div>Faisal Susiwala - 31 Individual ReMax Agent Worldwide</div>
+              <div>Starbucks - 210 Pinebush Road, Cambridge</div>
+            </div>
+            <div class="sponsor-slide" data-slide="1">
+              <div>WILK & WILK Orthodontics - Cambridge Ontario</div>
+              <div>Starbucks, 537 Hespeler Road, Cambridge</div>
+            </div>
+            <div class="sponsor-slide" data-slide="2">
+              <div>HD Mutual Insurance Company</div>
+              <div>Starbucks, 45 Sportsworld Drive, Kitchener</div>
+            </div>
+            <div class="sponsor-slide" data-slide="3">
+              <div>National Pasta - 129 Pinbush Road, Cambridge</div>
+              <div>Swiss Chalet - 506 Hespeler Road, Cambridge</div>
+            </div>
+            <div class="sponsor-slide" data-slide="4">
+              <div>Swiss Chalet - 101 Dundas Street South, Cambridge</div>
+              <div>Zerhs - Cambridge Centre</div>
+            </div>
+            <div class="sponsor-slide" data-slide="5">
+              <div>Zerhs - Hespeler</div>
+              <div>Albert's Doughnuts Bake Shop - 250 Dundas Street South, Cambridge</div>
+            </div>
+            <div class="sponsor-slide" data-slide="6">
+              <div>Corderro Meat</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -65,6 +99,27 @@
       
       // Start updating
       WebLynx.startAutoUpdate(updateAnnouncementData, UPDATE_INTERVAL);
+      
+      // Rotate sponsor slides
+      let currentSlide = 0;
+      const slides = document.querySelectorAll('.sponsor-slide');
+      const totalSlides = slides.length;
+      
+      function rotateSponsorSlides() {
+        // Hide current slide
+        slides[currentSlide].classList.remove('active');
+        
+        // Move to next slide
+        currentSlide = (currentSlide + 1) % totalSlides;
+        
+        // Show next slide
+        slides[currentSlide].classList.add('active');
+      }
+      
+      // Start rotating slides every 5 seconds
+      if (totalSlides > 0) {
+        setInterval(rotateSponsorSlides, 5000);
+      }
     </script>
   </body>
 </html>
