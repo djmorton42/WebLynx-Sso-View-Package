@@ -284,9 +284,18 @@ body {
   align-items: flex-start;
 }
 
+.sponsors-banner.single-column {
+  justify-content: center;
+}
+
 .sponsors-left {
   flex: 1;
   text-align: center;
+}
+
+.sponsors-left.full-width {
+  flex: none;
+  width: 100%;
 }
 
 .sponsors-text {
@@ -325,6 +334,7 @@ body {
   text-align: center;
   padding-left: 20px;
   border-left: 2px solid rgba(139, 0, 0, 0.2);
+  display: none; /* Hidden by default, shown if sponsor-text.txt exists */
 }
 
 .sponsor-title {

@@ -36,36 +36,8 @@
           </div>
         </div>
         <div class="sponsors-right">
-          <div class="sponsor-title">CAMBRIDGE SSC WOULD LIKE TO THANK OUR SPONSORS:</div>
-          <div class="sponsor-slides">
-            <div class="sponsor-slide active" data-slide="0">
-              <div class="sponsor-name">Faisal Susiwala - 31 Individual ReMax Agent Worldwide</div>
-              <div class="sponsor-name">Starbucks - 210 Pinebush Road, Cambridge</div>
-            </div>
-            <div class="sponsor-slide" data-slide="1">
-              <div class="sponsor-name">WILK & WILK Orthodontics - Cambridge Ontario</div>
-              <div class="sponsor-name">Starbucks, 537 Hespeler Road, Cambridge</div>
-            </div>
-            <div class="sponsor-slide" data-slide="2">
-              <div class="sponsor-name">HD Mutual Insurance Company</div>
-              <div class="sponsor-name">Starbucks, 45 Sportsworld Drive, Kitchener</div>
-            </div>
-            <div class="sponsor-slide" data-slide="3">
-              <div class="sponsor-name">National Pasta - 129 Pinbush Road, Cambridge</div>
-              <div class="sponsor-name">Swiss Chalet - 506 Hespeler Road, Cambridge</div>
-            </div>
-            <div class="sponsor-slide" data-slide="4">
-              <div class="sponsor-name">Swiss Chalet - 101 Dundas Street South, Cambridge</div>
-              <div class="sponsor-name">Zehrs - Cambridge Centre</div>
-            </div>
-            <div class="sponsor-slide" data-slide="5">
-              <div class="sponsor-name">Zehrs - Hespeler</div>
-              <div class="sponsor-name">Albert's Doughnuts Bake Shop - 250 Dundas Street South, Cambridge</div>
-            </div>
-            <div class="sponsor-slide" data-slide="6">
-              <div class="sponsor-name">Corderro Meat</div>
-            </div>
-          </div>
+          <div class="sponsor-title"></div>
+          <div class="sponsor-slides"></div>
         </div>
       </div>
     </div>
@@ -100,26 +72,116 @@
       // Start updating
       WebLynx.startAutoUpdate(updateAnnouncementData, UPDATE_INTERVAL);
       
-      // Rotate sponsor slides
-      let currentSlide = 0;
-      const slides = document.querySelectorAll('.sponsor-slide');
-      const totalSlides = slides.length;
-      
-      function rotateSponsorSlides() {
-        // Hide current slide
-        slides[currentSlide].classList.remove('active');
+      // Load sponsor data from JSON file
+      async function loadSponsorData() {
+        const sponsorJsonPath = '/views/announcements/sponsors/sponsor-text.json';
+        const sponsorsRight = document.querySelector('.sponsors-right');
+        const sponsorsBanner = document.querySelector('.sponsors-banner');
+        const sponsorsLeft = document.querySelector('.sponsors-left');
+        const sponsorTitle = document.querySelector('.sponsor-title');
+        const sponsorSlides = document.querySelector('.sponsor-slides');
         
-        // Move to next slide
-        currentSlide = (currentSlide + 1) % totalSlides;
-        
-        // Show next slide
-        slides[currentSlide].classList.add('active');
+        try {
+          const response = await fetch(sponsorJsonPath);
+          if (!response.ok) {
+            throw new Error('File not found');
+          }
+          
+          const data = await response.json();
+          
+          // Validate JSON structure
+          if (!data.title || !data.slides || !Array.isArray(data.slides)) {
+            throw new Error('Invalid JSON structure');
+          }
+          
+          // Set the title
+          if (sponsorTitle) {
+            sponsorTitle.textContent = data.title;
+          }
+          
+          // Build slides dynamically
+          if (sponsorSlides) {
+            sponsorSlides.innerHTML = '';
+            data.slides.forEach((slide, index) => {
+              if (!slide.sponsors || !Array.isArray(slide.sponsors)) {
+                return; // Skip invalid slides
+              }
+              
+              const slideDiv = document.createElement('div');
+              slideDiv.className = 'sponsor-slide';
+              if (index === 0) {
+                slideDiv.classList.add('active');
+              }
+              slideDiv.setAttribute('data-slide', index);
+              
+              // Add each sponsor as a separate div
+              slide.sponsors.forEach(sponsor => {
+                const sponsorDiv = document.createElement('div');
+                sponsorDiv.className = 'sponsor-name';
+                sponsorDiv.textContent = sponsor;
+                slideDiv.appendChild(sponsorDiv);
+              });
+              
+              sponsorSlides.appendChild(slideDiv);
+            });
+          }
+          
+          // Show right column and use two-column layout
+          if (sponsorsRight) {
+            sponsorsRight.style.display = 'block';
+          }
+          if (sponsorsBanner) {
+            sponsorsBanner.classList.remove('single-column');
+          }
+          if (sponsorsLeft) {
+            sponsorsLeft.classList.remove('full-width');
+          }
+          
+          // Initialize slide rotation
+          initializeSponsorSlides();
+          
+        } catch (error) {
+          // File doesn't exist or error, hide right column
+          console.log('Sponsor JSON file not found, using single column layout:', error);
+          if (sponsorsRight) {
+            sponsorsRight.style.display = 'none';
+          }
+          if (sponsorsBanner) {
+            sponsorsBanner.classList.add('single-column');
+          }
+          if (sponsorsLeft) {
+            sponsorsLeft.classList.add('full-width');
+          }
+        }
       }
       
-      // Start rotating slides every 7 seconds
-      if (totalSlides > 0) {
-        setInterval(rotateSponsorSlides, 7000);
+      // Initialize sponsor slides rotation
+      function initializeSponsorSlides() {
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.sponsor-slide');
+        const totalSlides = slides.length;
+        
+        if (totalSlides === 0) {
+          return; // No slides to rotate
+        }
+        
+        function rotateSponsorSlides() {
+          // Hide current slide
+          slides[currentSlide].classList.remove('active');
+          
+          // Move to next slide
+          currentSlide = (currentSlide + 1) % totalSlides;
+          
+          // Show next slide
+          slides[currentSlide].classList.add('active');
+        }
+        
+        // Start rotating slides every 5 seconds
+        setInterval(rotateSponsorSlides, 5000);
       }
+      
+      // Load sponsor data on page load
+      loadSponsorData();
     </script>
   </body>
 </html>
