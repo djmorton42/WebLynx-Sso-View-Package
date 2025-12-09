@@ -2,7 +2,7 @@
 <html>
   <head>
     <link rel="icon" type="image/png" href="/views/broadcast_race_overlay/sso-logo.png">
-    <link rel="stylesheet" href="/views/broadcast_race_overlay/styles.css">
+    <link rel="stylesheet" href="/views/broadcast_race_overlay_splits/styles.css">
     {{VIEW_PROPERTIES}}
   </head>
   <body>
@@ -13,6 +13,12 @@
     
     <!-- Overall race time in bottom-right corner -->
     <div class="race-clock" id="race-clock">00:00.0</div>
+    
+    <!-- Bell Lap indicator -->
+    <div class="bell-lap-container" id="bell-lap-container">
+      <div class="bell-icon">&#128276;</div>
+      <div class="bell-lap-text">Bell Lap</div>
+    </div>
     
     <!-- Event name below race clock -->
     <div class="event-name" id="event-name">Event Name</div>
@@ -40,6 +46,11 @@
       // Configuration - now using externalized view properties
       const UPDATE_INTERVAL = VIEW_CONFIG.updateInterval;
       const SORT_BY = 'place'; // 'place' or 'lane'
+      const BELL_LAP_DURATION = (VIEW_CONFIG.bell_lap_duration_seconds || 3) * 1000; // Convert to milliseconds
+      
+      // Track if bell lap has been shown for this race
+      let bellLapShown = false;
+      let bellLapTimeout = null;
       
       function getLaneColor(lane) {
         return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
@@ -72,9 +83,31 @@
         return clone;
       }
       
+      function showBellLap() {
+        const bellLapContainer = document.getElementById('bell-lap-container');
+        if (bellLapContainer) {
+          bellLapContainer.classList.add('show');
+          
+          // Hide after configured duration
+          if (bellLapTimeout) {
+            clearTimeout(bellLapTimeout);
+          }
+          bellLapTimeout = setTimeout(() => {
+            bellLapContainer.classList.remove('show');
+          }, BELL_LAP_DURATION);
+        }
+      }
+      
+      // Test function - call from console: testBellLap()
+      window.testBellLap = function() {
+        bellLapShown = false; // Reset flag
+        showBellLap();
+      };
+      
       function positionEventName() {
         const racerStack = document.getElementById('racer-stack');
         const eventName = document.getElementById('event-name');
+        const bellLapContainer = document.getElementById('bell-lap-container');
         
         if (racerStack && eventName) {
           const stackRect = racerStack.getBoundingClientRect();
@@ -85,6 +118,14 @@
           eventName.style.position = 'fixed';
           eventName.style.bottom = (window.innerHeight - stackRect.top + spacing) + 'px';
           // Don't set left or width - let CSS handle the positioning
+          
+          // Position bell lap above event name
+          if (bellLapContainer) {
+            const eventRect = eventName.getBoundingClientRect();
+            const bellLapSpacing = 8; // Space between bell lap and event name
+            bellLapContainer.style.position = 'fixed';
+            bellLapContainer.style.bottom = (window.innerHeight - eventRect.top + eventRect.height + bellLapSpacing) + 'px';
+          }
         }
       }
       
@@ -93,6 +134,63 @@
           if (error) {
             console.error('Error fetching race data:', error);
             return;
+          }
+          
+          // Check for bell lap (first time any racer reaches 1 lap remaining using real value)
+          // Status can be numeric (1 = Running, 0 = NotStarted) or string ('Running', 'Paused', etc.)
+          const isRaceRunning = data.status === 'Running' || data.status === 'Paused' || 
+                               data.status === 1 || data.status === 2; // 1 = Running, 2 might be Paused
+          
+          if (!bellLapShown && isRaceRunning) {
+            const activeRacers = WebLynx.getActiveRacers(data.racers);
+            
+            // Check if any racer has exactly 1 lap remaining (using real value, not delayed)
+            const hasBellLap = activeRacers.some(racer => {
+              // Try to get real-time lapsRemaining first
+              // Check various possible field names for the real-time value
+              let realLapsRemaining = null;
+              
+              if (racer.lapsRemaining !== undefined && racer.lapsRemaining !== null) {
+                realLapsRemaining = racer.lapsRemaining;
+              } else if (racer.realLapsRemaining !== undefined && racer.realLapsRemaining !== null) {
+                realLapsRemaining = racer.realLapsRemaining;
+              } else if (racer.actualLapsRemaining !== undefined && racer.actualLapsRemaining !== null) {
+                realLapsRemaining = racer.actualLapsRemaining;
+              } else if (racer.delayedLapsRemaining !== undefined && racer.delayedLapsRemaining !== null) {
+                // Fallback to delayed value if real-time value not available
+                realLapsRemaining = racer.delayedLapsRemaining;
+              }
+              
+              // If we found a value, check if racer has exactly 1 lap remaining
+              if (realLapsRemaining !== null) {
+                // Check if racer has exactly 1 lap remaining (between 1.0 and 1.999...)
+                return realLapsRemaining >= 1.0 && realLapsRemaining < 2.0;
+              }
+              
+              return false;
+            });
+            
+            if (hasBellLap) {
+              bellLapShown = true;
+              showBellLap();
+            }
+          }
+          
+          // Reset bell lap flag when race ends or resets
+          // Status can be numeric (0 = NotStarted) or string ('NotStarted', 'Finished')
+          const isRaceEnded = data.status === 'NotStarted' || data.status === 0 || 
+                             data.status === 'Finished' || data.status === 3; // 3 might be Finished
+          
+          if (isRaceEnded) {
+            bellLapShown = false;
+            const bellLapContainer = document.getElementById('bell-lap-container');
+            if (bellLapContainer) {
+              bellLapContainer.classList.remove('show');
+            }
+            if (bellLapTimeout) {
+              clearTimeout(bellLapTimeout);
+              bellLapTimeout = null;
+            }
           }
           
           // Update race clock

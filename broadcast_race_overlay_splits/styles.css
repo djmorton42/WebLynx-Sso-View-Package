@@ -50,6 +50,63 @@ body {
   z-index: 1000;
 }
 
+/* Bell Lap indicator */
+.bell-lap-container {
+  position: fixed;
+  left: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: rgba(255, 215, 0, 0.95); /* Gold background */
+  border: 2px solid #000;
+  border-radius: 6px;
+  padding: 8px 12px;
+  width: 420px; /* Match racer block width exactly */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1001; /* Above event name */
+  box-sizing: border-box;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  /* Position will be set dynamically by JavaScript */
+}
+
+.bell-lap-container.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.bell-icon {
+  font-size: 1.5em;
+  animation: ring 0.5s ease-in-out infinite;
+  transform-origin: top center;
+  line-height: 1;
+}
+
+.bell-lap-text {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: none;
+}
+
+@keyframes ring {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: rotate(-15deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: rotate(15deg);
+  }
+}
+
 /* Event name above racer stack */
 .event-name {
   position: fixed;
