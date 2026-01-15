@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="icon" type="image/png" href="/views/broadcast_race_overlay_splits_bell/sso-logo.png">
+    <link rel="stylesheet" href="/views/broadcast_race_overlay_splits_bell/styles.css">
+    {{VIEW_PROPERTIES}}
+  </head>
+  <body>
+    <!-- Logo in top-right corner -->
+    <div class="sso-logo">
+      <img src="/views/broadcast_race_overlay_splits_bell/sso-logo.png" alt="SSO Logo">
+    </div>
+    
+    <!-- Overall race time in bottom-right corner -->
+    <div class="race-clock" id="race-clock">1:06.324</div>
+    
+    <!-- Event name below race clock -->
+    <div class="event-name" id="event-name">Event 1 - 500m Men's Final</div>
+    
+    <!-- Racer information blocks stacked vertically on bottom-left -->
+    <div class="racer-stack" id="racer-stack">
+      <!-- Sample racer data will be populated by JavaScript -->
+    </div>
+    
+    <!-- HTML5 Template for racer blocks -->
+    <template id="racer-template">
+      <div class="racer-block">
+        <div class="lane-color"></div>
+        <div class="racer-info">
+          <div class="racer-name"></div>
+          <div class="affiliation"></div>
+        </div>
+        <div class="time"></div>
+        <div class="lap-count"></div>
+      </div>
+    </template>
+    
+    <script>
+      // Sample data for testing - 10 skaters
+      const sampleRacers = [
+        {
+          lane: 1,
+          name: "Racer McRacerFace",
+          affiliation: "Cambridge SSC",
+          cumulativeSplitTime: "00:01:04.234",
+          delayedLapsRemaining: 4,
+          place: 1
+        },
+        {
+          lane: 2,
+          name: "Speed Demon",
+          affiliation: "Toronto Speed Club",
+          cumulativeSplitTime: "00:01:05.123",
+          delayedLapsRemaining: 3,
+          place: 2
+        },
+        {
+          lane: 3,
+          name: "Lightning Bolt",
+          affiliation: "Vancouver Ice",
+          cumulativeSplitTime: "00:01:05.456",
+          delayedLapsRemaining: 3,
+          place: 3
+        },
+        {
+          lane: 4,
+          name: "Ice Queen",
+          affiliation: "Calgary Blades",
+          cumulativeSplitTime: "00:01:06.789",
+          delayedLapsRemaining: 2,
+          place: 4
+        },
+        {
+          lane: 5,
+          name: "Speed Skater Pro",
+          affiliation: "Edmonton Eagles",
+          cumulativeSplitTime: "00:01:07.012",
+          delayedLapsRemaining: 2,
+          place: 5
+        },
+        {
+          lane: 6,
+          name: "Frost Walker",
+          affiliation: "Winnipeg Jets",
+          cumulativeSplitTime: "00:01:07.345",
+          delayedLapsRemaining: 2,
+          place: 6
+        },
+        {
+          lane: 7,
+          name: "Blade Runner",
+          affiliation: "Halifax Hurricanes",
+          cumulativeSplitTime: "00:01:08.678",
+          delayedLapsRemaining: 1,
+          place: 7
+        },
+        {
+          lane: 8,
+          name: "Ice Princess",
+          affiliation: "Montreal Canadiens",
+          cumulativeSplitTime: "00:01:09.012",
+          delayedLapsRemaining: 1,
+          place: 8
+        },
+        {
+          lane: 9,
+          name: "Speed King",
+          affiliation: "Quebec Nordiques",
+          cumulativeSplitTime: "00:01:09.345",
+          delayedLapsRemaining: 1,
+          place: 9
+        },
+        {
+          lane: 10,
+          name: "Frozen Thunder",
+          affiliation: "Saskatchewan Blades",
+          cumulativeSplitTime: "00:01:10.678",
+          delayedLapsRemaining: 1,
+          place: 10
+        }
+      ];
+      
+      // Lane colors now provided by VIEW_CONFIG
+      
+      function formatTime(timeSpanString) {
+        if (!timeSpanString) return '00:00.000';
+        
+        // TimeSpan is serialized as "HH:mm:ss.fffffff" format
+        // We need to parse it and format as "mm:ss.fff"
+        const parts = timeSpanString.split(':');
+        if (parts.length !== 3) return '00:00.000';
+        
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const secondsParts = parts[2].split('.');
+        const seconds = parseInt(secondsParts[0]) || 0;
+        
+        // Handle the fractional seconds part (7 digits)
+        let milliseconds = 0;
+        if (secondsParts[1]) {
+          const fractionalPart = secondsParts[1].padEnd(7, '0');
+          milliseconds = Math.floor(parseInt(fractionalPart.substring(0, 3)) || 0);
+        }
+        
+        const totalMinutes = hours * 60 + minutes;
+        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
+        const formattedSeconds = seconds.toString().padStart(2, '0');
+        const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
+        
+        return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
+      }
+      
+      function getLaneColor(lane) {
+        return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
+      }
+      
+      function createRacerBlock(racer) {
+        const template = document.getElementById('racer-template');
+        const clone = template.content.cloneNode(true);
+        
+        // Populate the cloned template
+        clone.querySelector('.lane-color').style.backgroundColor = getLaneColor(racer.lane);
+        clone.querySelector('.racer-name').textContent = racer.name || '-';
+        clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
+        clone.querySelector('.time').textContent = formatTime(racer.cumulativeSplitTime);
+        clone.querySelector('.lap-count').textContent = racer.delayedLapsRemaining || '-';
+        
+        return clone;
+      }
+      
+      function positionEventName() {
+        const racerStack = document.getElementById('racer-stack');
+        const eventName = document.getElementById('event-name');
+        
+        if (racerStack && eventName) {
+          const stackRect = racerStack.getBoundingClientRect();
+          const eventHeight = 40; // Approximate height of event name box
+          const spacing = 4; // Space between event name and racer stack
+          
+          // Position event name above the racer stack
+          eventName.style.position = 'fixed';
+          eventName.style.bottom = (window.innerHeight - stackRect.top + spacing) + 'px';
+          eventName.style.left = '50px';
+        }
+      }
+      
+      function loadSampleData() {
+        // Update race clock
+        document.getElementById('race-clock').textContent = '1:06.324';
+        
+        // Update event name
+        document.getElementById('event-name').textContent = 'Event 1 - 500m Men\'s Final';
+        
+        // Update racer stack
+        const racerStack = document.getElementById('racer-stack');
+        racerStack.innerHTML = '';
+        
+        // Add sample racer blocks
+        sampleRacers.forEach(racer => {
+          racerStack.appendChild(createRacerBlock(racer));
+        });
+        
+        // Position event name above the racer stack
+        positionEventName();
+      }
+      
+      // Load sample data when page loads
+      document.addEventListener('DOMContentLoaded', loadSampleData);
+    </script>
+  </body>
+</html>
