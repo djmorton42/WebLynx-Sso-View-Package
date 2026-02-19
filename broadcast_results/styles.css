@@ -64,7 +64,8 @@ body {
 .unofficial-indicator {
   position: absolute;
   top: 0;
-  right: 0;
+  left: calc(100% - 308px); /* Align left edge with lane color column in result rows */
+  width: max-content;
   font-size: 1.6em;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
@@ -73,6 +74,21 @@ body {
   padding: 8px 16px;
   border-radius: 6px;
   border: 2px solid #ffff00;
+}
+
+/* Logo in top-left corner */
+.owg-logo {
+  position: fixed;
+  top: 30px;
+  left: 50px;
+  z-index: 1000;
+  opacity: 0.9;
+}
+
+.owg-logo img {
+  max-height: 120px;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 /* Logo in top-right corner */
