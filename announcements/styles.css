@@ -69,13 +69,20 @@ body {
   margin-top: 4px;
 }
 
+/* Group OWG + SSO logos on the right, OWG immediately left of SSO */
+.header-logos {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
 .sso-logo {
   height: 120px;
   display: flex;
   align-items: center;
   /*background: #FFFFFF;*/
   padding: 12px 20px;
-  border-radius: 12px;
+  /*border-radius: 12px;*/
   /*border: 2px solid #FFD700;*/
   /*box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);*/
 }
@@ -84,6 +91,32 @@ body {
   height: 100%;
   width: auto;
   filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.owg-logo {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+}
+
+.owg-logo img {
+  height: 100%;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* OWG at 90% so it matches SSO visually; SSO at full size */
+.header-logos .owg-logo img {
+  height: calc(120px * 0.9);
+  width: auto;
+  object-fit: contain;
+}
+
+.header-logos .sso-logo img {
+  height: 120px;
+  width: auto;
+  object-fit: contain;
 }
 
 /* Main Content Area */
