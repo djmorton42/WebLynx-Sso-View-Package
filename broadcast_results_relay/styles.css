@@ -75,6 +75,21 @@ body {
   border: 2px solid #ffff00;
 }
 
+/* Logo in top-left corner */
+.owg-logo {
+  position: fixed;
+  top: 30px;
+  left: 50px;
+  z-index: 1000;
+  opacity: 0.9;
+}
+
+.owg-logo img {
+  max-height: 120px;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
 /* Logo in top-right corner */
 .sso-logo {
   position: fixed;

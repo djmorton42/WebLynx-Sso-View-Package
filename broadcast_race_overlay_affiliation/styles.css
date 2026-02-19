@@ -17,18 +17,46 @@ body {
   position: relative;
 }
 
-/* Logo in top-right corner */
-.sso-logo {
+/* OWG logo in top-left corner (same padding as right side: top 30px, left 50px) */
+.owg-logo {
+  position: fixed;
+  top: 30px;
+  left: 50px;
+  z-index: 1000;
+  opacity: 0.45;
+}
+
+.owg-logo img {
+  max-height: 120px;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Right side: SSO logo and Ontario logo stacked, right-justified */
+.right-logos {
   position: fixed;
   top: 30px;
   right: 50px;
   z-index: 1000;
-  /*opacity: 0.9;*/
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.sso-logo,
+.ontario-logo {
   opacity: 0.45;
 }
 
 .sso-logo img {
   max-height: 120px;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.ontario-logo img {
+  max-height: 52px; /* 50% of SSO logo height */
   width: auto;
   filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
 }
