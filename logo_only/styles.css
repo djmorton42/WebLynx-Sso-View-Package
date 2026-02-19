@@ -17,13 +17,14 @@ body {
   position: relative;
 }
 
-/* Logo in top-right corner - exact same position as broadcast_race_overlay */
+/* Logo in top-right corner */
 .sso-logo {
   position: fixed;
   top: 30px;
   right: 50px;
   z-index: 1000;
-  opacity: 0.9;
+  /*opacity: 0.9;*/
+  opacity: 0.45;
 }
 
 .sso-logo img {

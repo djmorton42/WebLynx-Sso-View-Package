@@ -23,7 +23,8 @@ body {
   top: 30px;
   right: 50px;
   z-index: 1000;
-  opacity: 0.9;
+  /*opacity: 0.9;*/
+  opacity: 0.45;
 }
 
 .sso-logo img {

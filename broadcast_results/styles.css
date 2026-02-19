@@ -75,14 +75,30 @@ body {
   border: 2px solid #ffff00;
 }
 
+/* Logo in top-right corner */
 .sso-logo {
+  position: fixed;
+  top: 30px;
+  right: 50px;
+  z-index: 1000;
+  opacity: 0.9;
+}
+
+.sso-logo img {
+  max-height: 120px;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Old logo position */
+.sso-logo-old {
   position: absolute;
   top: 20px; /* Move down from top edge */
   left: 20px; /* Move right from left edge */
   z-index: 10;
 }
 
-.sso-logo img {
+.sso-logo-old img {
   height: 120px; /* Reduced back to original size to prevent overlap */
   width: auto; /* Maintain aspect ratio */
   max-width: 200px; /* Reduced back to original max width */
