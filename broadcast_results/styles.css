@@ -63,15 +63,16 @@ body {
 
 .unofficial-indicator {
   position: absolute;
-  top: 0;
-  left: calc(100% - 308px);
+  top: 60px;
+  right: 0;
+  left: calc(100% - 350px);
   width: max-content;
   font-size: 1.6em;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
   font-weight: 600;
   background-color: rgba(0, 0, 0, 0.7);
-  padding: 8px 16px;
+  padding: 8px 24px;
   border-radius: 6px;
   border: 2px solid #ffff00;
 }
