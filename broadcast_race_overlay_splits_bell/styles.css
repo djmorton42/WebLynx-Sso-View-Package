@@ -58,7 +58,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background-color: rgba(255, 215, 0, 0.95); /* Gold background */
+  background-color: rgba(255, 255, 255, 0.95); /* White background */
   border: 2px solid #000;
   border-radius: 6px;
   padding: 8px 12px;
