@@ -1,1 +1,1 @@
-Overlay with race clock and racer list with live updates, showing last lap split time. Includes bell lap notification.
+Overlay with race clock and racer list with live updates, showing last lap split time. Shows "n Laps to go" at 25, 20, 15, 10, 5, and 3 laps remaining, and "Bell Lap" at 1 lap remaining.
