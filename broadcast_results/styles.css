@@ -64,7 +64,8 @@ body {
 .unofficial-indicator {
   position: absolute;
   top: 0;
-  right: 0;
+  left: calc(100% - 308px);
+  width: max-content;
   font-size: 1.6em;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
