@@ -61,11 +61,11 @@ body {
   line-height: 1.1;
 }
 
+/* Right edge aligned with racer time box; width fits text (no line break) */
 .unofficial-indicator {
   position: absolute;
   top: 60px;
-  right: 0;
-  left: calc(100% - 350px);
+  right: 24px;
   width: max-content;
   font-size: 1.6em;
   color: #ffff00;
@@ -75,6 +75,8 @@ body {
   padding: 8px 24px;
   border-radius: 6px;
   border: 2px solid #ffff00;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* Logo in top-right corner */

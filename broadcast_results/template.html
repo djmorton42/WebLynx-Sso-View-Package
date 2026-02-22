@@ -28,7 +28,7 @@
       </div>
     </div>
     
-    <!-- HTML5 Template for result rows -->
+    <!-- HTML5 Template for result rows --> 
     <template id="result-template">
       <div class="result-row">
         <div class="position"></div>
@@ -45,6 +45,15 @@
     <script>
       // Configuration - now using externalized view properties
       const UPDATE_INTERVAL = 1000; // milliseconds - less frequent for results
+      
+      // TEMPORARY: set to true to always show unofficial banner and demo racers when none loaded
+      const DEMO_RESULTS_VIEW = false;
+      const DEMO_RACERS = [
+        { lane: 1, name: 'Demo Skater One', affiliation: 'Club A', hasPlaceData: true, placeText: '1', finalTime: '00:01:25.3400000', cumulativeSplitTime: '00:01:25.3400000' },
+        { lane: 2, name: 'Demo Skater Two', affiliation: 'Club B', hasPlaceData: true, placeText: '2', finalTime: '00:01:26.1200000', cumulativeSplitTime: '00:01:26.1200000' },
+        { lane: 3, name: 'Demo Skater Three', affiliation: 'Club A', hasPlaceData: true, placeText: '3', finalTime: '00:01:27.8900000', cumulativeSplitTime: '00:01:27.8900000' },
+        { lane: 4, name: 'Demo Skater Four', affiliation: 'Club C', hasPlaceData: true, placeText: '4', finalTime: '00:01:28.4500000', cumulativeSplitTime: '00:01:28.4500000' },
+      ];
       
       function getLaneColor(lane) {
         return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
@@ -103,7 +112,12 @@
           }
           
           // Update race details bar
-          if (data.event) {
+          const allRacers = data.racers ? WebLynx.getActiveRacers(data.racers) : [];
+          let sortedRacers = allRacers;
+          if (DEMO_RESULTS_VIEW && sortedRacers.length === 0) {
+            sortedRacers = DEMO_RACERS;
+            document.getElementById('race-details-bar').textContent = 'Demo - Results Preview';
+          } else if (data.event) {
             const eventName = data.event.eventName || 'Race Event';
             const eventNumber = data.event.eventNumber || '';
             const raceDetails = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
@@ -114,10 +128,6 @@
           const resultsContainer = document.getElementById('results-container');
           resultsContainer.innerHTML = '';
           
-          // Display all racers (already sorted by server)
-          const allRacers = WebLynx.getActiveRacers(data.racers);
-          const sortedRacers = allRacers; // Server already sorts correctly
-          
           // Apply dynamic sizing class based on number of racers
           resultsContainer.className = 'results-container';
           if (sortedRacers.length >= 2 && sortedRacers.length <= 10) {
@@ -127,10 +137,10 @@
           // Check if any racers have places set
           const hasPlaces = sortedRacers.some(racer => racer.hasPlaceData);
           
-          // Show/hide unofficial results indicator based on whether places are set
+          // Show/hide unofficial results indicator (always show when DEMO_RESULTS_VIEW)
           const unofficialIndicator = document.querySelector('.unofficial-indicator');
           if (unofficialIndicator) {
-            unofficialIndicator.style.display = hasPlaces ? 'block' : 'none';
+            unofficialIndicator.style.display = (DEMO_RESULTS_VIEW || hasPlaces) ? 'block' : 'none';
           }
           
           // Create result rows
