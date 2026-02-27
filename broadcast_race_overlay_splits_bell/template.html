@@ -53,6 +53,8 @@
       // Track which lap milestones have been shown for this race
       let lapsToGoShown = new Set();
       let lapsToGoTimeout = null;
+      // Max laps remaining seen this race (= total laps in race); never show milestones above this
+      let maxLapsRemainingSeen = null;
       
       function getLaneColor(lane) {
         return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
@@ -152,6 +154,7 @@
           if (isRaceRunning) {
             const activeRacers = WebLynx.getActiveRacers(data.racers);
             let minLapsRemaining = null;
+            let maxLapsRemaining = null;
             
             activeRacers.forEach(racer => {
               let realLapsRemaining = null;
@@ -164,14 +167,27 @@
               } else if (racer.delayedLapsRemaining !== undefined && racer.delayedLapsRemaining !== null) {
                 realLapsRemaining = racer.delayedLapsRemaining;
               }
-              if (realLapsRemaining !== null && (minLapsRemaining === null || realLapsRemaining < minLapsRemaining)) {
-                minLapsRemaining = realLapsRemaining;
+              if (realLapsRemaining !== null) {
+                if (minLapsRemaining === null || realLapsRemaining < minLapsRemaining) {
+                  minLapsRemaining = realLapsRemaining;
+                }
+                if (maxLapsRemaining === null || realLapsRemaining > maxLapsRemaining) {
+                  maxLapsRemaining = realLapsRemaining;
+                }
               }
             });
             
-            if (minLapsRemaining !== null) {
-              // Find the largest milestone we've crossed that we haven't shown yet
+            // Race total = max laps remaining we've seen (all racers start at total laps)
+            if (maxLapsRemaining !== null) {
+              maxLapsRemainingSeen = maxLapsRemainingSeen === null
+                ? maxLapsRemaining
+                : Math.max(maxLapsRemainingSeen, maxLapsRemaining);
+            }
+            
+            if (minLapsRemaining !== null && maxLapsRemainingSeen !== null) {
+              // Only show milestones that are <= total laps in this race
               for (const n of LAPS_TO_GO_MILESTONES) {
+                if (n > maxLapsRemainingSeen) continue;
                 if (minLapsRemaining <= n && !lapsToGoShown.has(n)) {
                   lapsToGoShown.add(n);
                   showLapsToGo(n);
@@ -187,6 +203,7 @@
           
           if (isRaceEnded) {
             lapsToGoShown.clear();
+            maxLapsRemainingSeen = null;
             const bellLapContainer = document.getElementById('bell-lap-container');
             if (bellLapContainer) {
               bellLapContainer.classList.remove('show');
