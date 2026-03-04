@@ -130,6 +130,7 @@ jobs:
             - broadcast_results
             - lap_counter
             - logo_only
+            - race_summary
             
             ### Installation
             1. Download the zip file
