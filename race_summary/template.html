@@ -70,30 +70,37 @@
         const currentLaps = getCurrentLapsRemaining(racer);
         const hasPlaceData = racer.hasPlaceData && racer.placeText;
         const hasAlphaCode = hasPlaceData && typeof WebLynx !== 'undefined' && WebLynx.isAlphaCode && WebLynx.isAlphaCode(racer.placeText);
-        const hasFinishTime = racer.finalTime || racer.cumulativeSplitTime;
-        const showFinishTime = (hasPlaceData && !hasAlphaCode && hasFinishTime) || (!data && hasFinishTime);
         const isRaceFinished = raceStatus === 'Finished' || raceStatus === 3;
+        // Only show final finish time, not intermediate split times (cumulativeSplitTime)
+        const hasFinalTime = racer.finalTime;
+        const showFinishTime = (hasPlaceData && !hasAlphaCode && hasFinalTime) || (isRaceFinished && hasFinalTime && !hasAlphaCode) || (!data && hasFinalTime);
 
         const lapsEl = clone.querySelector('.laps-remaining');
         const timeEl = clone.querySelector('.finish-time');
 
-        if (showFinishTime || (isRaceFinished && hasFinishTime && !hasAlphaCode)) {
-          const timeToShow = racer.finalTime || racer.cumulativeSplitTime;
+        if (showFinishTime || (isRaceFinished && hasFinalTime && !hasAlphaCode)) {
+          const timeToShow = racer.finalTime;
           timeEl.textContent = typeof WebLynx !== 'undefined' && WebLynx.formatTime ? WebLynx.formatTime(timeToShow) : timeToShow;
           timeEl.style.display = 'block';
           lapsEl.style.display = 'none';
         } else {
-          if (currentLaps !== null && typeof WebLynx !== 'undefined' && WebLynx.formatLapsDisplay) {
-            const isHalfLap = currentLaps % 1 === 0.5 && (raceStatus === 'NotStarted' || raceStatus === 0);
+          // Display laps as "laps remaining": add 1 to API value only after race has started and only for whole-lap races (not e.g. 13.5)
+          const raceNotStarted = raceStatus === 'NotStarted' || raceStatus === 0;
+          const isWholeLaps = currentLaps !== null && currentLaps !== undefined && currentLaps % 1 === 0;
+          const displayLaps = (currentLaps !== null && currentLaps !== undefined)
+            ? (raceNotStarted || !isWholeLaps ? currentLaps : currentLaps + 1)
+            : currentLaps;
+          if (displayLaps !== null && displayLaps !== undefined && typeof WebLynx !== 'undefined' && WebLynx.formatLapsDisplay) {
+            const isHalfLap = displayLaps % 1 === 0.5 && (raceStatus === 'NotStarted' || raceStatus === 0);
             if (isHalfLap && WebLynx.formatLapsDisplayHTML) {
-              lapsEl.innerHTML = WebLynx.formatLapsDisplayHTML(currentLaps, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
+              lapsEl.innerHTML = WebLynx.formatLapsDisplayHTML(displayLaps, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
               lapsEl.classList.add('half-lap');
             } else {
-              lapsEl.textContent = WebLynx.formatLapsDisplay(currentLaps, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
+              lapsEl.textContent = WebLynx.formatLapsDisplay(displayLaps, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
               lapsEl.classList.remove('half-lap');
             }
           } else {
-            lapsEl.textContent = currentLaps != null ? currentLaps : '-';
+            lapsEl.textContent = displayLaps != null ? displayLaps : '-';
             lapsEl.classList.remove('half-lap');
           }
           lapsEl.style.display = 'block';

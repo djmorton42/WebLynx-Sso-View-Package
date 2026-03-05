@@ -191,8 +191,9 @@
       function createRacerRow(racer) {
         var row = document.createElement('div');
         row.className = 'racer-row';
-        var showTime = racer.finalTime || racer.cumulativeSplitTime;
-        var laps = racer.lapsRemaining != null ? racer.lapsRemaining : '-';
+        // Only show final time, not split times (race_summary shows final results only)
+        var showTime = !!racer.finalTime;
+        var laps = racer.lapsRemaining != null ? racer.lapsRemaining + 1 : '-';
         row.innerHTML =
           '<div class="lane-color" style="background-color:' + getLaneColor(racer.lane) + '"></div>' +
           '<div class="racer-info">' +
@@ -200,7 +201,7 @@
             '<div class="affiliation">' + (racer.affiliation || '-') + '</div>' +
           '</div>' +
           '<div class="laps-remaining" style="display:' + (showTime ? 'none' : 'block') + '">' + laps + '</div>' +
-          '<div class="finish-time" style="display:' + (showTime ? 'block' : 'none') + '">' + (showTime ? formatTime(racer.finalTime || racer.cumulativeSplitTime) : '') + '</div>';
+          '<div class="finish-time" style="display:' + (showTime ? 'block' : 'none') + '">' + (showTime ? formatTime(racer.finalTime) : '') + '</div>';
         return row;
       }
 

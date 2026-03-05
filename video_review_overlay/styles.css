@@ -60,29 +60,29 @@ body {
   z-index: 1000;
 }
 
-.race-clock {
+.race-clock,
+.current-timestamp {
+  width: 200px;
+  box-sizing: border-box;
   background-color: rgba(255, 255, 255, 0.92);
   border: 2px solid #000;
   border-radius: 8px;
-  padding: 14px 24px;
-  font-size: 2em;
-  font-weight: bold;
   color: #000;
   text-align: right;
-  min-width: 160px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+.race-clock {
+  padding: 14px 24px;
+  font-size: 2em;
+  font-weight: bold;
+}
+
 .current-timestamp {
-  background-color: rgba(255, 255, 255, 0.92);
-  border: 2px solid #000;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 1.25em;
+  padding: 10px 24px;
+  font-size: 1.5em;
   font-weight: 600;
-  color: #000;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 @media (max-width: 1920px) {
